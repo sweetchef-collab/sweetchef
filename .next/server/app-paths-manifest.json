@@ -1,0 +1,8 @@
+{
+  "/kpi-sans-vendeur/page": "app/kpi-sans-vendeur/page.js",
+  "/kpi-sans-vendeur/[mois]/page": "app/kpi-sans-vendeur/[mois]/page.js",
+  "/kpi/page": "app/kpi/page.js",
+  "/page": "app/page.js",
+  "/ventes-sans-vendeur/page": "app/ventes-sans-vendeur/page.js",
+  "/login/page": "app/login/page.js"
+}
