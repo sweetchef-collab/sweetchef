@@ -92,6 +92,11 @@ export default function Page() {
           <div className="tile-title">Clients inactifs</div>
           <div className="tile-desc">Clients n'ayant pas commandé ce mois</div>
         </Link>
+        <Link className="tile" href="/activite-clients">
+          <div className="tile-icon">📈</div>
+          <div className="tile-title">Activité — Clients</div>
+          <div className="tile-desc">Agrégats et indicateurs Positif/Négatif par mois</div>
+        </Link>
       </div>
       <div className="actions" style={{ marginTop: 12 }}>
         <button className="btn" onClick={handleRefresh} disabled={refreshing}>{refreshing ? 'Rafraîchissement…' : 'Rafraîchir ventes–vendeur'}</button>
