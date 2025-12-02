@@ -18,21 +18,22 @@ export default async function Page({ params }: { params: { mois: string } }) {
   const mois = params.mois;
   const { s, e } = rangeFromMonth(mois);
   const { data, error } = await supabase
-    .from('sales_nv')
-    .select('date_facture,total_ht,total_ttc,code_client,client')
+    .from('vente_vendeur')
+    .select('date_facture,total_ht,total_ttc,code_client,client,vendeur')
     .gte('date_facture', s)
     .lt('date_facture', e);
 
   const byDay = new Map<string, { count: number; total_ht: number; total_ttc: number }>();
   const byClient = new Map<string, { client: string; total_ht: number; total_ttc: number; count: number }>();
+  const byVendor = new Map<string, { vendeur: string; total_ht: number; total_ttc: number; count: number }>();
   let totalHT = 0; let totalTTC = 0; let ventes = 0;
 
   if (Array.isArray(data)) {
     for (const r of data as any[]) {
       const d = r.date_facture ? String(r.date_facture).slice(0, 10) : null;
       const htRaw = r.total_ht; const ttcRaw = r.total_ttc;
-      const ht = typeof htRaw === 'number' ? htRaw : parseFloat(String(htRaw ?? '').replace(',', '.'));
-      const ttc = typeof ttcRaw === 'number' ? ttcRaw : parseFloat(String(ttcRaw ?? '').replace(',', '.'));
+      const ht = typeof htRaw === 'number' ? htRaw : parseFloat(String(htRaw ?? '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.'));
+      const ttc = typeof ttcRaw === 'number' ? ttcRaw : parseFloat(String(ttcRaw ?? '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.'));
       const htVal = isFinite(ht) ? ht : 0; const ttcVal = isFinite(ttc) ? ttc : 0;
       if (d) {
         const cur = byDay.get(d) ?? { count: 0, total_ht: 0, total_ttc: 0 };
@@ -45,6 +46,12 @@ export default async function Page({ params }: { params: { mois: string } }) {
         cur.count += 1; cur.total_ht += htVal; cur.total_ttc += ttcVal;
         byClient.set(key, cur);
       }
+      const vend = String((r as any).vendeur ?? '').trim();
+      if (vend) {
+        const curV = byVendor.get(vend) ?? { vendeur: vend, total_ht: 0, total_ttc: 0, count: 0 };
+        curV.count += 1; curV.total_ht += htVal; curV.total_ttc += ttcVal;
+        byVendor.set(vend, curV);
+      }
       ventes += 1; totalHT += htVal; totalTTC += ttcVal;
     }
   }
@@ -53,6 +60,8 @@ export default async function Page({ params }: { params: { mois: string } }) {
     .sort((a, b) => a.d.localeCompare(b.d));
   const clients = Array.from(byClient.values())
     .sort((a, b) => b.total_ht - a.total_ht).slice(0, 10);
+  const vendors = Array.from(byVendor.values())
+    .sort((a, b) => b.total_ht - a.total_ht);
   const joursActifs = days.length;
 
   const order = [1,2,3,4,5];
@@ -97,13 +106,14 @@ export default async function Page({ params }: { params: { mois: string } }) {
             </table>
           </div>
           <div className="section">
-            <div className="subtitle">Par jour de semaine</div>
+            <div className="subtitle">Vendeurs (HT)</div>
             <table className="table">
-              <thead><tr><th>Jour</th><th>Ventes</th><th style={{ textAlign:'right' }}>Total HT</th></tr></thead>
+              <thead><tr><th>Vendeur</th><th>Ventes</th><th style={{ textAlign:'right' }}>Total HT</th></tr></thead>
               <tbody>
-                {weekRows.map((r) => (
-                  <tr key={r.w}><td>{r.name}</td><td>{r.count}</td><td style={{ textAlign:'right' }}>{r.total_ht.toLocaleString('fr-FR')}</td></tr>
+                {vendors.map((v, i) => (
+                  <tr key={i}><td><Link className="cell-link" href={`/vendeur/${encodeURIComponent(v.vendeur)}`}>{v.vendeur}</Link></td><td>{v.count}</td><td style={{ textAlign:'right' }}>{v.total_ht.toLocaleString('fr-FR')}</td></tr>
                 ))}
+                {!vendors.length && (<tr><td colSpan={3}><div className="alert">Aucune donnée.</div></td></tr>)}
               </tbody>
             </table>
           </div>

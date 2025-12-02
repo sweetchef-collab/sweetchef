@@ -84,3 +84,4 @@ body{margin:0;background:linear-gradient(180deg,#f6efe5 0%,#f2e6d8 100%);color:v
 .tile:hover{border-color:#c5a678 !important}
 .kpi-card{background:var(--panel-2) !important}
 .cell-link:hover{background:#f1e7d5 !important}
+.header{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,#f6efe5 0%,#f2e6d8 100%)}

@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       const toNum = (v: any) => {
         if (v === null || v === undefined) return null;
         if (typeof v === 'number' && isFinite(v)) return v;
-        const s = String(v).replace(/\s+/g, '').replace(',', '.');
+        const s = String(v).replace(/\s+/g, '').replace(/\./g, '').replace(',', '.');
         const n = parseFloat(s);
         return isFinite(n) ? n : null;
       };
