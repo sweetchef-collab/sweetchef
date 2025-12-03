@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import Papa from 'papaparse';
 
 export default function Page() {
   const [file, setFile] = useState<File | null>(null);
@@ -23,9 +24,28 @@ export default function Page() {
     setOk(null);
     setStatus('Envoi en cours…');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload-nv', { method: 'POST', body: fd });
+      const isCsv = /\.csv$/i.test(file.name);
+      let res: Response;
+      if (isCsv) {
+        const parsed = await new Promise<any[]>((resolve, reject) => {
+          Papa.parse(file!, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: (h) => (h ?? '').toString().toLowerCase().trim(),
+            complete: (r) => resolve(r.data as any[]),
+            error: reject,
+          });
+        });
+        res = await fetch('/api/upload-nv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file_name: file.name, rows: parsed }),
+        });
+      } else {
+        const fd = new FormData();
+        fd.append('file', file);
+        res = await fetch('/api/upload-nv', { method: 'POST', body: fd });
+      }
       const data = await res.json();
       if (!res.ok) {
         setOk(false);
@@ -51,9 +71,28 @@ export default function Page() {
     setLoading(true);
     setVerify(null);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/verify-nv', { method: 'POST', body: fd });
+      const isCsv = /\.csv$/i.test(file.name);
+      let res: Response;
+      if (isCsv) {
+        const parsed = await new Promise<any[]>((resolve, reject) => {
+          Papa.parse(file!, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: (h) => (h ?? '').toString().toLowerCase().trim(),
+            complete: (r) => resolve(r.data as any[]),
+            error: reject,
+          });
+        });
+        res = await fetch('/api/verify-nv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file_name: file.name, rows: parsed }),
+        });
+      } else {
+        const fd = new FormData();
+        fd.append('file', file);
+        res = await fetch('/api/verify-nv', { method: 'POST', body: fd });
+      }
       const data = await res.json();
       if (!res.ok) {
         setOk(false);

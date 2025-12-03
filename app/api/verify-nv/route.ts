@@ -5,10 +5,27 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 });
+    let rows: any[] | null = null;
+    let fileName: string | undefined;
+    const ct = request.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const body = await request.json();
+      rows = Array.isArray(body?.rows) ? body.rows : null;
+      fileName = body?.file_name;
+    }
+    let file: File | null = null;
+    if (!rows) {
+      const formData = await request.formData();
+      const f = formData.get('file');
+      if (!f || !(f instanceof File)) {
+        return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 });
+      }
+      file = f as File;
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -61,7 +78,7 @@ export async function POST(request: Request) {
     let invalidDates = 0;
     const samples: { original: any; parsed: string | null }[] = [];
 
-    for (const r of rows as any[]) {
+    for (const r of (rows || []) as any[]) {
       total += 1;
       const v = r['Date Facture'] ?? r['date facture'] ?? r['DATE FACTURE'];
       const parsed = toDate(v);
@@ -72,7 +89,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-      file: file.name,
+      file: fileName ?? (file?.name || 'upload'),
       total_rows: total,
       valid_dates: validDates,
       invalid_dates: invalidDates,
@@ -82,4 +99,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: e.message ?? 'Erreur interne' }, { status: 500 });
   }
 }
-

@@ -6,17 +6,30 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 });
+    let rows: any[] | null = null;
+    let fileName: string | undefined;
+    const ct = request.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const body = await request.json();
+      rows = Array.isArray(body?.rows) ? body.rows : null;
+      fileName = body?.file_name;
+    }
+    let file: File | null = null;
+    if (!rows) {
+      const formData = await request.formData();
+      const f = formData.get('file');
+      if (!f || !(f instanceof File)) {
+        return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 });
+      }
+      file = f as File;
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
+    if (!rows) rows = [];
 
     const mapped = rows.map((r: Record<string, any>) => {
       const lr: Record<string, any> = {};
@@ -31,7 +44,11 @@ export async function POST(request: Request) {
       const toNum = (v: any) => {
         if (v === null || v === undefined) return null;
         if (typeof v === 'number' && isFinite(v)) return v;
-        const s = String(v).replace(/\s+/g, '').replace(/\./g, '').replace(',', '.');
+        let s = String(v).trim().replace(/\s+/g, '');
+        const hasComma = s.includes(',');
+        const hasDot = s.includes('.');
+        if (hasComma && hasDot) s = s.replace(/\./g, '').replace(',', '.');
+        else if (hasComma && !hasDot) s = s.replace(',', '.');
         const n = parseFloat(s);
         return isFinite(n) ? n : null;
       };
@@ -82,7 +99,7 @@ export async function POST(request: Request) {
 
     const { error: archiveError } = await supabase
       .from('imports')
-      .insert({ file_name: file.name, rows });
+      .insert({ file_name: fileName ?? (file?.name || 'upload'), rows });
 
     if (archiveError) {
       return NextResponse.json({ error: archiveError.message }, { status: 500 });
