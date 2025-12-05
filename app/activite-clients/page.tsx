@@ -127,6 +127,9 @@ export default function Page() {
             d = new Date(raw).toISOString().slice(0, 7);
           }
           if (!d) continue;
+          const dm = d; // format YYYY-MM
+          const winStart = prevMonth(mois, 17);
+          if (dm < winStart || dm > mois) continue;
           const htRaw = v.total_ht;
           const ht = typeof htRaw === 'number' ? htRaw : parseFloat(String(htRaw ?? '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.'));
           const htVal = isFinite(ht) ? ht : 0;
@@ -173,7 +176,7 @@ export default function Page() {
     const qq = q.trim().toLowerCase();
     return rows.filter((r) => {
       const mQ = !qq || [r.code_client, r.client, r.ville].some((v: any) => String(v ?? '').toLowerCase().includes(qq));
-      const mV = !vend || String(r.vendeur ?? '') === vend;
+      const mV = !vend || String(r.vendeur ?? '').trim().toUpperCase() === vend.trim().toUpperCase();
       return mQ && mV;
     });
   }, [rows, q, vend]);
