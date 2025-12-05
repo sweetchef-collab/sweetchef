@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { parse as parseCsv } from 'csv-parse/sync';
 import { supabase } from '@/lib/supabaseClient';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    let rows: any[] | null = null;
+    let rows: any[] = [];
     let fileName: string | undefined;
     const ct = request.headers.get('content-type') || '';
     if (ct.includes('application/json')) {
       const body = await request.json();
-      rows = Array.isArray(body?.rows) ? body.rows : null;
+      rows = Array.isArray(body?.rows) ? body.rows : [];
       fileName = body?.file_name;
     }
     let file: File | null = null;
-    if (!rows) {
+    if (!rows.length) {
       const formData = await request.formData();
       const f = formData.get('file');
       if (!f || !(f instanceof File)) {
@@ -23,17 +24,24 @@ export async function POST(request: Request) {
       }
       file = f as File;
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
+      const name = (file?.name || '').toLowerCase();
+      if (name.endsWith('.csv')) {
+        const text = new TextDecoder('utf-8').decode(arrayBuffer);
+        const sample = text.slice(0, 1024);
+        const hasSemi = sample.includes(';');
+        const opts: any = { columns: (h: any) => (h ?? '').toString().toLowerCase().trim(), skip_empty_lines: true, bom: true, delimiter: hasSemi ? ';' : ',' };
+        try {
+          rows = parseCsv(text, opts);
+        } catch {
+          rows = parseCsv(text, { ...opts, delimiter: hasSemi ? ',' : ';' });
+        }
+      } else {
+        const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
+      }
     }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
 
     const norm = (s: any) => (s ?? '').toString().toLowerCase().trim();
     const toStr = (v: any) => {
@@ -97,14 +105,22 @@ export async function POST(request: Request) {
       };
     }).filter((o) => Object.values(o).some((v) => v !== null));
 
+    let inserted = 0;
     if (mapped.length) {
       const size = 1000;
       for (let i = 0; i < mapped.length; i += size) {
         const chunk = mapped.slice(i, i + size);
-        const { error } = await supabase.from('sales_nv').insert(chunk);
+        const { error } = await supabase.from('sales_clean').insert(chunk);
         if (error) {
+          const msg = String(error.message || '').toLowerCase();
+          const tableMissing = error.code === '42P01' || msg.includes('relation') && msg.includes('does not exist');
+          if (tableMissing) {
+            inserted = 0;
+            break;
+          }
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
+        inserted += chunk.length;
       }
     }
 
@@ -115,7 +131,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: archiveError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ message: `Importé ${mapped.length} lignes ciblées (ventes sans vendeur) et archivé ${rows.length} lignes depuis ${file.name}` });
+    const msg = inserted
+      ? `Importé ${inserted} lignes (ventes sans vendeur) et archivé ${rows.length} lignes depuis ${file?.name || fileName || 'upload'}`
+      : `Table sales_clean absente: archivage ${rows.length} lignes depuis ${file?.name || fileName || 'upload'}`;
+    return NextResponse.json({ message: msg });
   } catch (e: any) {
     return NextResponse.json({ error: e.message ?? 'Erreur interne' }, { status: 500 });
   }

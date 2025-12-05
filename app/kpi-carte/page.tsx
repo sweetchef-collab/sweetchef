@@ -37,26 +37,49 @@ export default function Page() {
       setLoading(true);
       setStatus('Chargement des ventes…');
       const { data, error } = await supabase
-        .from('vente_vendeur')
-        .select('code_client,client,ville,code_postal,total_ht,date_facture')
-        .gte('date_facture', s)
-        .lt('date_facture', e);
+        .from('sales_clean')
+        .select('code_client,client,total_ht,date_facture')
+        .range(0, 999999);
+      const { data: clients } = await supabase
+        .from('client_vendeur')
+        .select('code_client,client,ville,code_postal')
+        .range(0, 999999);
       if (error) {
         setStatus(error.message);
         setLoading(false);
         return;
       }
+      const info = new Map<string, { client?: string; ville?: string; code_postal?: string }>();
+      if (Array.isArray(clients)) {
+        for (const c of clients as any[]) {
+          const code = String(c.code_client ?? '').trim().toUpperCase();
+          if (code) info.set(code, { client: String(c.client ?? c.societe ?? ''), ville: String(c.ville ?? ''), code_postal: String(c.code_postal ?? '') });
+        }
+      }
       const byCity = new Map<string, { clients: Set<string>; total_ht: number; postcodes: Set<string> }>();
       for (const r of (data || []) as any[]) {
-        const city = String(r.ville || '').trim();
+        const raw = r.date_facture;
+        let d: string | null = null;
+        if (typeof raw === 'string') {
+          if (/^\d{4}-\d{2}-\d{2}/.test(raw)) d = raw.slice(0, 10);
+          else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+            const [dd, mm, yyyy] = raw.split('/').map((v: any) => parseInt(v, 10));
+            d = new Date(Date.UTC(yyyy, mm - 1, dd)).toISOString().slice(0, 10);
+          }
+        } else if (raw) {
+          d = new Date(raw).toISOString().slice(0, 10);
+        }
+        if (!(d && d >= s && d < e)) continue;
+        const cm = info.get(String(r.code_client ?? '').trim().toUpperCase()) || {};
+        const city = String(cm.ville || '').trim();
         if (!city) continue;
         const key = city.toUpperCase();
         const cur = byCity.get(key) ?? { clients: new Set<string>(), total_ht: 0, postcodes: new Set<string>() };
-        cur.clients.add(String(r.code_client || r.client || ''));
-        const raw = r.total_ht;
-        const n = typeof raw === 'number' ? raw : parseFloat(String(raw ?? '').replace(',', '.'));
+        cur.clients.add(String(r.code_client || cm.client || ''));
+        const rawHT = r.total_ht;
+        const n = typeof rawHT === 'number' ? rawHT : parseFloat(String(rawHT ?? '').replace(',', '.'));
         if (isFinite(n)) cur.total_ht += n;
-        const cp = String(r.code_postal ?? '').trim();
+        const cp = String(cm.code_postal ?? '').trim();
         if (cp) cur.postcodes.add(cp);
         byCity.set(key, cur);
       }
@@ -121,7 +144,7 @@ export default function Page() {
       </div>
       <div className="panel">
         <h1 className="title">Carte clients du mois {label}</h1>
-        <p className="subtitle">Source: `vente_vendeur` — points par ville, survol pour détails.</p>
+        <p className="subtitle">Source: `sales_clean` — points par ville, survol pour détails.</p>
 
         {loading && <div className="progress"><div className="progress-bar" /></div>}
         {status && <div className="status"><div className="alert">{status}</div></div>}

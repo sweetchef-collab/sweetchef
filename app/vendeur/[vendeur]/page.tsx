@@ -30,11 +30,18 @@ function monthFrom(dv: any) {
 
 export default async function Page({ params }: { params: { vendeur: string } }) {
   const vendeur = decodeURIComponent(params.vendeur);
-  const { data } = await supabase
-    .from('vente_vendeur')
-    .select('date_facture,total_ht,total_ttc,client,code_client,vendeur')
-    .eq('vendeur', vendeur)
-    .range(0, 99999);
+  let data: any[] = [];
+  for (let offset = 0; offset < 1000000; offset += 1000) {
+    const { data: chunk } = await supabase
+      .from('vente_vendeur')
+      .select('date_facture,total_ht,total_ttc,client,code_client,vendeur')
+      .range(offset, offset + 999);
+    if (!Array.isArray(chunk) || chunk.length === 0) break;
+    const vendKey = vendeur.trim().toUpperCase();
+    const filtered = (chunk as any[]).filter((r) => String(r.vendeur ?? '').trim().toUpperCase() === vendKey);
+    data = data.concat(filtered);
+    if (chunk.length < 1000) break;
+  }
 
   const byMonth = new Map<string, { total_ht: number; total_ttc: number; ventes: number }>();
   const byClient = new Map<string, { client: string; total_ht: number; ventes: number }>();
@@ -61,7 +68,7 @@ export default async function Page({ params }: { params: { vendeur: string } }) 
 
   const months = Array.from(byMonth.entries()).map(([mois, v]) => ({ mois, ...v }))
     .sort((a, b) => a.mois.localeCompare(b.mois));
-  const clients = Array.from(byClient.values()).sort((a, b) => b.total_ht - a.total_ht).slice(0, 20);
+  const topClients = Array.from(byClient.values()).sort((a, b) => b.total_ht - a.total_ht).slice(0, 20);
 
   return (
     <div className="container">
@@ -97,10 +104,10 @@ export default async function Page({ params }: { params: { vendeur: string } }) 
             <table className="table">
               <thead><tr><th>Client</th><th>Ventes</th><th style={{ textAlign:'right' }}>Total HT</th></tr></thead>
               <tbody>
-                {clients.map((c, i) => (
+                {topClients.map((c, i) => (
                   <tr key={i}><td>{c.client}</td><td>{c.ventes}</td><td style={{ textAlign:'right' }}>{c.total_ht.toLocaleString('fr-FR')}</td></tr>
                 ))}
-                {!clients.length && (<tr><td colSpan={3}><div className="alert">Aucune donnée.</div></td></tr>)}
+                {!topClients.length && (<tr><td colSpan={3}><div className="alert">Aucune donnée.</div></td></tr>)}
               </tbody>
             </table>
           </div>
@@ -109,4 +116,3 @@ export default async function Page({ params }: { params: { vendeur: string } }) 
     </div>
   );
 }
-

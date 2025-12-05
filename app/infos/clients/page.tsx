@@ -19,14 +19,22 @@ export default function Page() {
     async function load() {
       setLoading(true);
       setStatus('Chargement…');
-      const { data, error } = await supabase
-        .from('client_vendeur')
-        .select('code_client,societe,groupe,code_postal,ville,vendeur')
-        .order('societe', { ascending: true })
-        .range(0, 99999);
+      let all: any[] = [];
+      let error: any = null;
+      for (let offset = 0; offset < 1000000; offset += 1000) {
+        const { data: chunk, error: err } = await supabase
+          .from('client_vendeur')
+          .select('code_client,societe,groupe,code_postal,ville,vendeur')
+          .order('societe', { ascending: true })
+          .range(offset, offset + 999);
+        if (err && !error) error = err;
+        if (!Array.isArray(chunk) || chunk.length === 0) break;
+        all = all.concat(chunk as any[]);
+        if (chunk.length < 1000) break;
+      }
       if (!cancelled) {
         if (error) setStatus(error.message); else setStatus('');
-        setRows(Array.isArray(data) ? (data as any[]) : []);
+        setRows(all);
         setLoading(false);
       }
     }

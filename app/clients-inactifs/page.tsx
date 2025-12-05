@@ -43,14 +43,25 @@ export default function Page() {
         .order('societe', { ascending: true })
         .range(0, 99999);
       const { data: ventes } = await supabase
-        .from('vente_vendeur')
-        .select('code_client')
-        .gte('date_facture', s)
-        .lt('date_facture', e)
-        .range(0, 99999);
+        .from('sales_clean')
+        .select('code_client,date_facture')
+        .range(0, 999999);
       if (!cancelled) {
         const codes = new Set<string>();
         for (const v of (ventes || []) as any[]) {
+          const raw = v.date_facture;
+          let d: string | null = null;
+          if (typeof raw === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) d = raw.slice(0, 10);
+            else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+              const [dd, mm, yyyy] = raw.split('/').map((x: any) => parseInt(x, 10));
+              d = new Date(Date.UTC(yyyy, mm - 1, dd)).toISOString().slice(0, 10);
+            }
+          } else if (raw) {
+            d = new Date(raw).toISOString().slice(0, 10);
+          }
+          const { s, e } = rangeFromMonth(mois);
+          if (!(d && d >= s && d < e)) continue;
           const code = String(v.code_client ?? '').trim().toUpperCase();
           if (code) codes.add(code);
         }

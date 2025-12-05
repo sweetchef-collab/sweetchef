@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { parse as parseCsv } from 'csv-parse/sync';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    let rows: any[] | null = null;
+    let rows: any[] = [];
     let fileName: string | undefined;
     const ct = request.headers.get('content-type') || '';
     if (ct.includes('application/json')) {
       const body = await request.json();
-      rows = Array.isArray(body?.rows) ? body.rows : null;
+      rows = Array.isArray(body?.rows) ? body.rows : [];
       fileName = body?.file_name;
     }
     let file: File | null = null;
-    if (!rows) {
+    if (!rows.length) {
       const formData = await request.formData();
       const f = formData.get('file');
       if (!f || !(f instanceof File)) {
@@ -22,17 +23,24 @@ export async function POST(request: Request) {
       }
       file = f as File;
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
+      const name = (file?.name || '').toLowerCase();
+      if (name.endsWith('.csv')) {
+        const text = new TextDecoder('utf-8').decode(arrayBuffer);
+        const sample = text.slice(0, 1024);
+        const hasSemi = sample.includes(';');
+        const opts: any = { columns: (h: any) => (h ?? '').toString().toLowerCase().trim(), skip_empty_lines: true, bom: true, delimiter: hasSemi ? ';' : ',' };
+        try {
+          rows = parseCsv(text, opts);
+        } catch {
+          rows = parseCsv(text, { ...opts, delimiter: hasSemi ? ',' : ';' });
+        }
+      } else {
+        const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
+      }
     }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
 
     const norm = (s: any) => (s ?? '').toString().toLowerCase().trim();
     const toStr = (v: any) => {

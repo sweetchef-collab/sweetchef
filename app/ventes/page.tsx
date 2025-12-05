@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import Papa from 'papaparse';
 
 export default function Page() {
   const [file, setFile] = useState<File | null>(null);
@@ -23,35 +22,17 @@ export default function Page() {
     setOk(null);
     setStatus('Envoi en cours…');
     try {
-      const isCsv = /\.csv$/i.test(file.name);
-      let res: Response;
-      if (isCsv) {
-        const parsed = await new Promise<any[]>((resolve, reject) => {
-          Papa.parse(file!, {
-            header: true,
-            skipEmptyLines: true,
-            transformHeader: (h) => (h ?? '').toString().toLowerCase().trim(),
-            complete: (r) => resolve(r.data as any[]),
-            error: reject,
-          });
-        });
-        res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file_name: file.name, rows: parsed }),
-        });
-      } else {
-        const fd = new FormData();
-        fd.append('file', file);
-        res = await fetch('/api/upload', { method: 'POST', body: fd });
-      }
-      const data = await res.json();
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/import-csv', { method: 'POST', body: fd });
+      const ct = res.headers.get('content-type') || '';
+      const data = ct.includes('application/json') ? await res.json() : { error: await res.text() };
       if (!res.ok) {
         setOk(false);
         setStatus(`Erreur: ${data.error || 'inconnue'}`);
       } else {
         setOk(true);
-        setStatus(`${data.message}`);
+        setStatus(data.success ? `Importé ${data.imported} lignes depuis ${data.file}` : `${data.message || 'Import terminé'}`);
       }
     } catch (err: any) {
       setOk(false);
@@ -76,8 +57,8 @@ export default function Page() {
         </Link>
       </div>
       <div className="panel">
-        <h1 className="title">Import Ventes CSV / Excel</h1>
-        <p className="subtitle">Importez les colonnes ventes vers la table <code>sales</code>.</p>
+        <h1 className="title">Import Factures CSV / Excel</h1>
+        <p className="subtitle">Colonnes attendues: Code Client, Client, Objet, N° Facture, Date Facture, Total HT, Total TTC.</p>
         <div className="grid" style={{ gridTemplateColumns: '1fr' }}>
           <div className="section">
             <div

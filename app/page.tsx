@@ -63,10 +63,6 @@ export default function Page() {
 
       <h2 className="title" style={{ marginTop: 24 }}>KPI</h2>
       <div className="tiles">
-        <Link className="tile" href="/kpi">
-          <div className="tile-icon">📊</div>
-          <div className="tile-title">KPI Ventes</div>
-        </Link>
         <Link className="tile" href="/kpi-sans-vendeur">
           <div className="tile-icon">📊</div>
           <div className="tile-title">KPI Ventes NV</div>
@@ -74,10 +70,6 @@ export default function Page() {
         <Link className="tile" href="/kpi-carte">
           <div className="tile-icon">🗺️</div>
           <div className="tile-title">KPI Carte Clients</div>
-        </Link>
-        <Link className="tile" href="/vente-mensuel">
-          <div className="tile-icon">📅</div>
-          <div className="tile-title">Vente mensuel</div>
         </Link>
       </div>
       <h2 className="title" style={{ marginTop: 24 }}>Infos</h2>

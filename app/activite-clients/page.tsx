@@ -47,48 +47,97 @@ export default function Page() {
       const startWindow = prevMonth(mois, 17);
       const { s: sWin } = rangeFromMonth(startWindow);
       const { e: eWin } = rangeFromMonth(mois);
-      const { data: clients } = await supabase
-        .from('client_vendeur')
-        .select('code_client,societe,groupe,code_postal,ville,vendeur')
-        .order('societe', { ascending: true })
-        .range(0, 99999);
-      const { data: ventes } = await supabase
-        .from('vente_vendeur')
-        .select('code_client,client,date_facture,total_ht,vendeur')
-        .gte('date_facture', sWin)
-        .lt('date_facture', eWin)
-        .range(0, 99999);
+      let ventesAll: any[] = [];
+      for (let offset = 0; offset < 1000000; offset += 1000) {
+        const { data: chunk } = await supabase
+          .from('vente_vendeur')
+          .select('code_client,client,vendeur,ville,code_postal,date_facture,total_ht')
+          .order('id', { ascending: true })
+          .range(offset, offset + 999);
+        if (!Array.isArray(chunk) || chunk.length === 0) break;
+        ventesAll = ventesAll.concat(chunk as any[]);
+        if (chunk.length < 1000) break;
+      }
+
+      if (ventesAll.length === 0) {
+        const clientsAll: any[] = [];
+        for (let offset = 0; offset < 1000000; offset += 1000) {
+          const { data: chunkC } = await supabase
+            .from('client_vendeur')
+            .select('code_client,societe,groupe,code_postal,ville,vendeur')
+            .order('societe', { ascending: true })
+            .range(offset, offset + 999);
+          if (!Array.isArray(chunkC) || chunkC.length === 0) break;
+          clientsAll.push(...(chunkC as any[]));
+          if (chunkC.length < 1000) break;
+        }
+        const vendMap = new Map<string, { client?: string; vendeur?: string; ville?: string; code_postal?: string }>();
+        for (const c of clientsAll as any[]) {
+          const code = String(c.code_client ?? '').trim().toUpperCase();
+          if (!code) continue;
+          vendMap.set(code, {
+            client: String(c.societe ?? ''),
+            vendeur: String(c.vendeur ?? ''),
+            ville: String(c.ville ?? ''),
+            code_postal: String(c.code_postal ?? ''),
+          });
+        }
+        for (let offset = 0; offset < 1000000; offset += 1000) {
+          const { data: chunkS } = await supabase
+            .from('sales_clean')
+            .select('code_client,client,date_facture,total_ht')
+            .order('id', { ascending: true })
+            .range(offset, offset + 999);
+          if (!Array.isArray(chunkS) || chunkS.length === 0) break;
+          const merged = (chunkS as any[]).map((r) => {
+            const code = String(r.code_client ?? '').trim().toUpperCase();
+            const m = vendMap.get(code) || {};
+            return {
+              code_client: code,
+              client: String(m.client ?? r.client ?? ''),
+              vendeur: String(m.vendeur ?? ''),
+              ville: String(m.ville ?? ''),
+              code_postal: String(m.code_postal ?? ''),
+              date_facture: r.date_facture,
+              total_ht: r.total_ht,
+            };
+          });
+          ventesAll = ventesAll.concat(merged);
+          if (chunkS.length < 1000) break;
+        }
+      }
 
       if (!cancelled) {
-        const base = Array.isArray(clients) ? (clients as any[]) : [];
         const agg = new Map<string, {
           code_client: string; client?: string; societe?: string; groupe?: string; code_postal?: string; ville?: string; vendeur?: string;
           total_ht: number; commandes: number; premier_mois?: string | null; mois_actifs: Set<string>; flags: Record<string, boolean>;
         }>();
-        for (const c of base) {
-          const code = String(c.code_client ?? '').trim().toUpperCase();
-          if (!code) continue;
-          agg.set(code, {
-            code_client: code,
-            client: String(c.societe ?? ''),
-            societe: String(c.societe ?? ''),
-            groupe: String(c.groupe ?? ''),
-            code_postal: String(c.code_postal ?? ''),
-            ville: String(c.ville ?? ''),
-            vendeur: String(c.vendeur ?? ''),
-            total_ht: 0, commandes: 0, premier_mois: null, mois_actifs: new Set<string>(), flags: {},
-          });
-        }
-        for (const v of (ventes || []) as any[]) {
+        for (const v of ventesAll as any[]) {
           const code = String(v.code_client ?? '').trim().toUpperCase();
           if (!code) continue;
-          const d = typeof v.date_facture === 'string' ? v.date_facture.slice(0, 7) : new Date(v.date_facture).toISOString().slice(0, 7);
+          let d: string | null = null;
+          const raw = v.date_facture;
+          if (typeof raw === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) d = raw.slice(0, 7);
+            else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+              const [dd, mm, yyyy] = raw.split('/').map((x: any) => parseInt(x, 10));
+              d = new Date(Date.UTC(yyyy, mm - 1, dd)).toISOString().slice(0, 7);
+            }
+          } else if (raw) {
+            d = new Date(raw).toISOString().slice(0, 7);
+          }
+          if (!d) continue;
           const htRaw = v.total_ht;
           const ht = typeof htRaw === 'number' ? htRaw : parseFloat(String(htRaw ?? '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.'));
           const htVal = isFinite(ht) ? ht : 0;
           const cur = agg.get(code) ?? {
             code_client: code,
             client: String(v.client ?? ''),
+            societe: String(v.client ?? ''),
+            groupe: '',
+            code_postal: String(v.code_postal ?? ''),
+            ville: String(v.ville ?? ''),
+            vendeur: String(v.vendeur ?? ''),
             total_ht: 0, commandes: 0, premier_mois: null, mois_actifs: new Set<string>(), flags: {},
           };
           cur.total_ht += htVal;
@@ -137,9 +186,15 @@ export default function Page() {
     if (!isFinite(f)) return '';
     return f.toString().replace(/\./g, ',');
   }
-  function sanitize(v: any) {
-    const s = String(v ?? '');
-    return '"' + s.replace(/"/g, '""') + '"';
+  function toCsv(fields: string[], data: any[][]) {
+    const esc = (v: any) => {
+      const s = String(v ?? '');
+      const needs = /[";\n]/.test(s);
+      const t = s.replace(/"/g, '""');
+      return needs ? `"${t}"` : t;
+    };
+    const lines = [fields.map(esc).join(';')].concat(data.map((r) => r.map(esc).join(';')));
+    return lines.join('\n');
   }
   function handleExport() {
     const header = [
@@ -147,26 +202,24 @@ export default function Page() {
       'total_ht','nb_commandes','moyenne_par_commande','premier_mois','moyenne_par_mois',
       `commande_${mois}`, `commande_${m1}`, `commande_${m2}`
     ];
-    const rowsCsv = [header.join(';')];
-    for (const r of filtered) {
-      rowsCsv.push([
-        sanitize(r.code_client),
-        sanitize(r.client),
-        sanitize(r.groupe),
-        sanitize(r.code_postal),
-        sanitize(r.ville),
-        sanitize(r.vendeur),
-        fmtNumFR(r.total_ht || 0),
-        sanitize(r.commandes),
-        fmtNumFR(r.moyenne_commande || 0),
-        sanitize(r.premier_mois || ''),
-        fmtNumFR(r.moyenne_par_mois || 0),
-        sanitize(r.flag_mois),
-        sanitize(r.flag_m1),
-        sanitize(r.flag_m2),
-      ].join(';'));
-    }
-    const blob = new Blob([rowsCsv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const data = filtered.map((r) => ([
+      String(r.code_client ?? ''),
+      String(r.client ?? ''),
+      String(r.groupe ?? ''),
+      String(r.code_postal ?? ''),
+      String(r.ville ?? ''),
+      String(r.vendeur ?? ''),
+      fmtNumFR(r.total_ht || 0),
+      String(r.commandes ?? ''),
+      fmtNumFR(r.moyenne_commande || 0),
+      String(r.premier_mois ?? ''),
+      fmtNumFR(r.moyenne_par_mois || 0),
+      String(r.flag_mois ?? ''),
+      String(r.flag_m1 ?? ''),
+      String(r.flag_m2 ?? ''),
+    ]));
+    const csv = toCsv(header, data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

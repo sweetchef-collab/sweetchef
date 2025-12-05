@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { parse as parseCsv } from 'csv-parse/sync';
 import { supabase } from '@/lib/supabaseClient';
 
 export const runtime = 'nodejs';
@@ -23,10 +24,23 @@ export async function POST(request: Request) {
       }
       file = f as File;
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
+      const name = (file?.name || '').toLowerCase();
+      if (name.endsWith('.csv')) {
+        const text = new TextDecoder('utf-8').decode(arrayBuffer);
+        const sample = text.slice(0, 1024);
+        const hasSemi = sample.includes(';');
+        const opts: any = { columns: (h: any) => (h ?? '').toString().toLowerCase().trim(), skip_empty_lines: true, bom: true, delimiter: hasSemi ? ';' : ',' };
+        try {
+          rows = parseCsv(text, opts);
+        } catch {
+          rows = parseCsv(text, { ...opts, delimiter: hasSemi ? ',' : ';' });
+        }
+      } else {
+        const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: null });
+      }
     }
 
     if (!rows) rows = [];
@@ -105,7 +119,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: archiveError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ message: `Importé ${mapped.length} lignes ciblées et archivé ${rows.length} lignes depuis ${file.name}` });
+    return NextResponse.json({ message: `Importé ${mapped.length} lignes ciblées et archivé ${rows.length} lignes depuis ${file?.name || fileName || 'upload'}` });
   } catch (e: any) {
     return NextResponse.json({ error: e.message ?? 'Erreur interne' }, { status: 500 });
   }
