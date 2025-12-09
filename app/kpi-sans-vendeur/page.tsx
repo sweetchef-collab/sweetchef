@@ -22,11 +22,11 @@ export default async function Page() {
         : parseFloat(String((r as any).total_ht_mois ?? '').trim().replace(/\s/g, '').replace(/\./g, '').replace(',', '.')) || 0,
     }));
   } else {
-    // Fallback: pagination + agrégation côté client
+    // Fallback: pagination + agrégation côté client (vente_vendeur)
     const byMonth = new Map<string, number>();
     for (let offset = 0; offset < 1000000; offset += 1000) {
       const { data: chunk } = await supabase
-        .from('sales_clean')
+        .from('vente_vendeur')
         .select('date_facture,total_ht')
         .order('id', { ascending: true })
         .range(offset, offset + 999);
@@ -57,7 +57,7 @@ export default async function Page() {
       </div>
       <div className="panel">
         <h1 className="title">KPI Ventes NV</h1>
-        <p className="subtitle">Total HT par mois (source: sales_clean).</p>
+        <p className="subtitle">Total HT par mois (source: vente_vendeur).</p>
         <div className="kpi-cards">
           <div className="kpi-card">
             <div className="kpi-label">Total général HT</div>

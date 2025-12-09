@@ -20,31 +20,32 @@ export default async function Page({ params }: { params: { mois: string } }) {
   const all: any[] = [];
   for (let offset = 0; offset < 1000000; offset += 1000) {
     const { data: chunk } = await supabase
-      .from('sales_clean')
-      .select('date_facture,total_ht,total_ttc,code_client,client')
+      .from('vente_vendeur')
+      .select('date_facture,total_ht,total_ttc,code_client,client,vendeur')
       .order('id', { ascending: true })
       .range(offset, offset + 999);
     if (!Array.isArray(chunk) || chunk.length === 0) break;
     all.push(...(chunk as any[]));
     if (chunk.length < 1000) break;
   }
-  const { data: clients } = await supabase
-    .from('client_vendeur')
-    .select('code_client,client,vendeur')
-    .range(0, 999999);
 
   const byDay = new Map<string, { count: number; total_ht: number; total_ttc: number }>();
-  const byClient = new Map<string, { client: string; total_ht: number; total_ttc: number; count: number }>();
+  const byClient = new Map<string, { id: string; client: string; total_ht: number; total_ttc: number; count: number }>();
   const byVendor = new Map<string, { vendeur: string; total_ht: number; total_ttc: number; count: number }>();
+  const byPole = new Map<string, { pole: string; total_ht: number; total_ttc: number; count: number }>();
   let totalHT = 0; let totalTTC = 0; let ventes = 0;
 
-  const vendMap = new Map<string, { client?: string; vendeur?: string }>();
-  if (Array.isArray(clients)) {
-    for (const c of clients as any[]) {
-      const code = String(c.code_client ?? '').trim().toUpperCase();
-      if (code) vendMap.set(code, { client: String(c.client ?? c.societe ?? ''), vendeur: String(c.vendeur ?? '') });
-    }
-  }
+  const normName = (v: any) => String(v ?? '').replace(/\s+/g, ' ').trim();
+  const poleTerrain = ["FADOUA","ZOUHAIR","MOHA","MAISSA","HAMZA","TAHA","JASSIM","ANAS","ILYASSE"];
+  const poleTelevente = ["SOPHIA","SIHAM","CHAYMAE","NOURA","INES","RIZLANE","KENZA"];
+  const poleOf = (vend: any) => {
+    const u = String(vend ?? '').trim().toUpperCase();
+    if (!u) return 'Autre';
+    if (u === 'ICHAM') return 'Icham';
+    if (poleTerrain.includes(u)) return 'Terrain';
+    if (poleTelevente.includes(u)) return 'Télévente';
+    return 'Autre';
+  };
 
   if (Array.isArray(all)) {
     for (const r of all as any[]) {
@@ -73,17 +74,20 @@ export default async function Page({ params }: { params: { mois: string } }) {
       }
       const key = String(r.code_client ?? r.client ?? '');
       if (key) {
-        const cm = vendMap.get(String(r.code_client ?? '').trim().toUpperCase());
-        const cur = byClient.get(key) ?? { client: String(cm?.client ?? r.client ?? key), total_ht: 0, total_ttc: 0, count: 0 };
+        const cur = byClient.get(key) ?? { id: key, client: String(normName(r.client) || key), total_ht: 0, total_ttc: 0, count: 0 };
         cur.count += 1; cur.total_ht += htVal; cur.total_ttc += ttcVal;
         byClient.set(key, cur);
       }
-      const cm2 = vendMap.get(String(r.code_client ?? '').trim().toUpperCase());
-      const vend = String(cm2?.vendeur ?? '').trim();
+      const vend = String(r.vendeur ?? '').trim();
       if (vend) {
         const curV = byVendor.get(vend) ?? { vendeur: vend, total_ht: 0, total_ttc: 0, count: 0 };
         curV.count += 1; curV.total_ht += htVal; curV.total_ttc += ttcVal;
         byVendor.set(vend, curV);
+
+        const p = poleOf(vend);
+        const curP = byPole.get(p) ?? { pole: p, total_ht: 0, total_ttc: 0, count: 0 };
+        curP.count += 1; curP.total_ht += htVal; curP.total_ttc += ttcVal;
+        byPole.set(p, curP);
       }
       ventes += 1; totalHT += htVal; totalTTC += ttcVal;
     }
@@ -94,6 +98,8 @@ export default async function Page({ params }: { params: { mois: string } }) {
   const topClients = Array.from(byClient.values())
     .sort((a, b) => b.total_ht - a.total_ht).slice(0, 10);
   const vendors = Array.from(byVendor.values())
+    .sort((a, b) => b.total_ht - a.total_ht);
+  const poles = Array.from(byPole.values())
     .sort((a, b) => b.total_ht - a.total_ht);
   const joursActifs = days.length;
 
@@ -125,14 +131,14 @@ export default async function Page({ params }: { params: { mois: string } }) {
           <div className="kpi-card"><div className="kpi-label">Total HT</div><div className="kpi-value">{totalHT.toLocaleString('fr-FR')}</div></div>
           <div className="kpi-card"><div className="kpi-label">Total TTC</div><div className="kpi-value">{totalTTC.toLocaleString('fr-FR')}</div></div>
         </div>
-        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           <div className="section">
             <div className="subtitle">Top clients (HT)</div>
             <table className="table">
               <thead><tr><th>Client</th><th>Ventes</th><th style={{ textAlign:'right' }}>Total HT</th></tr></thead>
               <tbody>
                 {topClients.map((c, i) => (
-                  <tr key={i}><td>{c.client}</td><td>{c.count}</td><td style={{ textAlign:'right' }}>{c.total_ht.toLocaleString('fr-FR')}</td></tr>
+                  <tr key={i}><td><Link className="cell-link" href={`/client/${encodeURIComponent(c.id)}`}>{c.client}</Link></td><td>{c.count}</td><td style={{ textAlign:'right' }}>{c.total_ht.toLocaleString('fr-FR')}</td></tr>
                 ))}
                 {!topClients.length && (<tr><td colSpan={3}><div className="alert">Aucune donnée.</div></td></tr>)}
               </tbody>
@@ -147,6 +153,18 @@ export default async function Page({ params }: { params: { mois: string } }) {
                   <tr key={i}><td><Link className="cell-link" href={`/vendeur/${encodeURIComponent(v.vendeur)}`}>{v.vendeur}</Link></td><td>{v.count}</td><td style={{ textAlign:'right' }}>{v.total_ht.toLocaleString('fr-FR')}</td></tr>
                 ))}
                 {!vendors.length && (<tr><td colSpan={3}><div className="alert">Aucune donnée.</div></td></tr>)}
+              </tbody>
+            </table>
+          </div>
+          <div className="section">
+            <div className="subtitle">Pôles (HT)</div>
+            <table className="table">
+              <thead><tr><th>Pôle</th><th>Ventes</th><th style={{ textAlign:'right' }}>Total HT</th></tr></thead>
+              <tbody>
+                {poles.map((p, i) => (
+                  <tr key={i}><td><Link className="cell-link" href={`/pole/${encodeURIComponent(p.pole)}`}>{p.pole}</Link></td><td>{p.count}</td><td style={{ textAlign:'right' }}>{p.total_ht.toLocaleString('fr-FR')}</td></tr>
+                ))}
+                {!poles.length && (<tr><td colSpan={3}><div className="alert">Aucune donnée.</div></td></tr>)}
               </tbody>
             </table>
           </div>
