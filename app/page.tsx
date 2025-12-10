@@ -72,6 +72,20 @@ export default function Page() {
           <div className="tile-title">KPI Carte Clients</div>
         </Link>
       </div>
+      <h2 className="title" style={{ marginTop: 24 }}>Graphique</h2>
+      <div className="tiles">
+        <Link className="tile" href="/kpi-graphiques">
+          <div className="tile-icon">📉</div>
+          <div className="tile-title">Graphique — Pôle</div>
+          <div className="tile-desc">Courbes et barres par pôle (12 mois)</div>
+        </Link>
+        <Link className="tile" href="/graphique-vendeur">
+          <div className="tile-icon">📈</div>
+          <div className="tile-title">Graphique — Vendeur</div>
+          <div className="tile-desc">Tendances mensuelles et répartition par vendeur</div>
+        </Link>
+      </div>
+
       <h2 className="title" style={{ marginTop: 24 }}>Infos</h2>
       <div className="tiles">
         <Link className="tile" href="/infos/clients">
