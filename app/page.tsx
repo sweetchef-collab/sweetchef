@@ -84,6 +84,11 @@ export default function Page() {
           <div className="tile-title">Graphique — Vendeur</div>
           <div className="tile-desc">Tendances mensuelles et répartition par vendeur</div>
         </Link>
+        <Link className="tile" href="/graphique-ville">
+          <div className="tile-icon">🏙️</div>
+          <div className="tile-title">Graphique — Ville</div>
+          <div className="tile-desc">Top villes, tendance et répartition</div>
+        </Link>
       </div>
 
       <h2 className="title" style={{ marginTop: 24 }}>Infos</h2>
