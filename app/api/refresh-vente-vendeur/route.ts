@@ -7,7 +7,8 @@ export const runtime = 'nodejs';
 export async function POST() {
   try {
     const ck = cookies();
-    if (ck.get('sc_admin')?.value !== '1') {
+    const role = ck.get('sc_role')?.value;
+    if ((ck.get('sc_admin')?.value !== '1') && role !== 'admin') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
     let refreshed: number | null = null;

@@ -9,6 +9,15 @@ export async function POST(request: Request) {
     if (!username || !password) {
       return NextResponse.json({ error: 'Identifiants manquants' }, { status: 400 });
     }
+    const uname = String(username).trim().toLowerCase();
+    const isIcham = uname === 'icham' && password === 'Icham2025';
+
+    if (isIcham) {
+      const res = NextResponse.json({ ok: true, role: 'icham' });
+      res.cookies.set('sc_role', 'icham', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
+      return res;
+    }
+
     const { data, error } = await supabase.rpc('verify_user', { p_username: username, p_password: password });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -16,7 +25,8 @@ export async function POST(request: Request) {
     if (!data) {
       return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
     }
-    const res = NextResponse.json({ ok: true });
+    const res = NextResponse.json({ ok: true, role: 'admin' });
+    res.cookies.set('sc_role', 'admin', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
     res.cookies.set('sc_admin', '1', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
     return res;
   } catch (e: any) {

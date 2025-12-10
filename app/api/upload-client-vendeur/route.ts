@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabaseClient';
+import { cookies } from 'next/headers';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
+    const ck = cookies();
+    const role = ck.get('sc_role')?.value;
+    if (role !== 'admin' && ck.get('sc_admin')?.value !== '1') {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
     const formData = await request.formData();
     const file = formData.get('file');
     if (!file || !(file instanceof File)) {
@@ -60,4 +66,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: e.message ?? 'Erreur interne' }, { status: 500 });
   }
 }
-

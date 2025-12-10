@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { supabase as publicClient } from '@/lib/supabaseClient'
+import { cookies } from 'next/headers'
 
 export const runtime = 'nodejs'
 
@@ -45,11 +46,16 @@ function cleanRow(row: any) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const u = new URL(req.url)
+    const ck = cookies();
+    const role = ck.get('sc_role')?.value;
+    if (role !== 'admin' && ck.get('sc_admin')?.value !== '1') {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+    const u = new URL(request.url)
     const dryRun = u.searchParams.get('dryRun') === '1' || u.searchParams.get('dry') === '1'
-    const form = await req.formData()
+    const form = await request.formData()
     const file = form.get('file')
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ error: 'Aucun fichier envoyé' }, { status: 400 })

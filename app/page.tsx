@@ -1,9 +1,12 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cookies } from 'next/headers';
 import { useState } from 'react';
 
 export default function Page() {
+  const ck = cookies();
+  const role = ck.get('sc_role')?.value || (ck.get('sc_admin')?.value === '1' ? 'admin' : null);
   const [refreshing, setRefreshing] = useState(false);
   const [status, setStatus] = useState('');
   const [ok, setOk] = useState<boolean | null>(null);
@@ -89,6 +92,13 @@ export default function Page() {
           <div className="tile-title">Graphique — Ville</div>
           <div className="tile-desc">Top villes, tendance et répartition</div>
         </Link>
+        {role === 'icham' && (
+          <Link className="tile" href="/icham">
+            <div className="tile-icon">🧑‍💼</div>
+            <div className="tile-title">Espace — Icham</div>
+            <div className="tile-desc">Vue dédiée aux ventes d'Icham</div>
+          </Link>
+        )}
       </div>
 
       <h2 className="title" style={{ marginTop: 24 }}>Infos</h2>

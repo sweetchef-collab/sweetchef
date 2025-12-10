@@ -14,8 +14,9 @@ export function middleware(req: NextRequest) {
     || pathname.startsWith('/images')
     || pathname.startsWith('/favicon');
 
-  const cookie = req.cookies.get('sc_admin');
-  const authed = cookie?.value === '1';
+  const roleCookie = req.cookies.get('sc_role');
+  const adminCookie = req.cookies.get('sc_admin');
+  const authed = !!roleCookie?.value || adminCookie?.value === '1';
 
   if (!authed && !isPublic) {
     const url = req.nextUrl.clone();
@@ -26,6 +27,9 @@ export function middleware(req: NextRequest) {
 
   const res = NextResponse.next();
   res.headers.set('Cache-Control', 'no-store');
+  if (roleCookie?.value) {
+    res.headers.set('x-sc-role', roleCookie.value);
+  }
   return res;
 }
 
