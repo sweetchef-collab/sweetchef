@@ -83,6 +83,10 @@ export default async function Page() {
       <div className="panel">
         <h1 className="title">Espace — Icham</h1>
         <p className="subtitle">Vue dédiée aux ventes d'Icham, avec accès aux pages pôle.</p>
+        <div className="tiles" style={{ marginBottom: 12 }}>
+          <Link className="tile" href="/icham/graphique"><div className="tile-icon">📉</div><div className="tile-title">Graphique — Icham</div><div className="tile-desc">Courbe HT (12 mois)</div></Link>
+          <Link className="tile" href="/icham/infos"><div className="tile-icon">🗂️</div><div className="tile-title">Infos — Icham</div><div className="tile-desc">Liste clients et derniers achats</div></Link>
+        </div>
         <div className="kpi-cards">
           <div className="kpi-card"><div className="kpi-label">Ventes</div><div className="kpi-value">{ventes}</div></div>
           <div className="kpi-card"><div className="kpi-label">Total HT</div><div className="kpi-value">{totalHT.toLocaleString('fr-FR')}</div></div>
@@ -129,4 +133,3 @@ export default async function Page() {
     </div>
   );
 }
-

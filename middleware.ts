@@ -18,6 +18,14 @@ export function middleware(req: NextRequest) {
   const adminCookie = req.cookies.get('sc_admin');
   const authed = !!roleCookie?.value || adminCookie?.value === '1';
 
+  if (pathname === '/') {
+    if (roleCookie?.value === 'icham') {
+      const url = req.nextUrl.clone();
+      url.pathname = '/icham';
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (!authed && !isPublic) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
