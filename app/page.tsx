@@ -1,37 +1,11 @@
-'use client';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cookies } from 'next/headers';
-import { useState } from 'react';
+import RefreshButton from './_components/RefreshButton';
 
 export default function Page() {
   const ck = cookies();
   const role = ck.get('sc_role')?.value || (ck.get('sc_admin')?.value === '1' ? 'admin' : null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [status, setStatus] = useState('');
-  const [ok, setOk] = useState<boolean | null>(null);
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    setOk(null);
-    setStatus('Rafraîchissement…');
-    try {
-      const res = await fetch('/api/refresh-vente-vendeur', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        setOk(false);
-        setStatus(`Erreur: ${data.error || 'inconnue'}`);
-      } else {
-        setOk(true);
-        setStatus(`Rafraîchi: ${data.rows ?? '—'} lignes`);
-      }
-    } catch (e: any) {
-      setOk(false);
-      setStatus(`Erreur réseau: ${e.message}`);
-    } finally {
-      setRefreshing(false);
-    }
-  }
 
   return (
     <div className="container">
@@ -40,7 +14,7 @@ export default function Page() {
           <Image className="brand-logo" src="/images/Logo.png" alt="Sweet Chef" width={64} height={64} />
         </Link>
         <div style={{ display:'flex', gap: 8 }}>
-          <button className="btn" onClick={handleRefresh} disabled={refreshing}>{refreshing ? 'Rafraîchissement…' : 'Rafraîchir ventes–vendeur'}</button>
+          <RefreshButton />
           <a className="btn secondary" href="/api/logout">Déconnexion</a>
         </div>
       </div>
@@ -119,14 +93,6 @@ export default function Page() {
           <div className="tile-desc">Agrégats et indicateurs Positif/Négatif par mois</div>
         </Link>
       </div>
-      <div className="actions" style={{ marginTop: 12 }}>
-        <button className="btn" onClick={handleRefresh} disabled={refreshing}>{refreshing ? 'Rafraîchissement…' : 'Rafraîchir ventes–vendeur'}</button>
-      </div>
-      {status && (
-        <div className="status">
-          <div className={`alert ${ok ? 'success' : ok === false ? 'error' : ''}`}>{status}</div>
-        </div>
-      )}
     </div>
   );
 }

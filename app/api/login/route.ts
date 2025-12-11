@@ -10,7 +10,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Identifiants manquants' }, { status: 400 });
     }
     const uname = String(username).trim().toLowerCase();
-    const isIcham = uname === 'icham' && password === 'Icham2025';
+    const pwd = String(password).trim().toLowerCase();
+    const isIcham = uname === 'icham' && pwd === 'icham2025';
 
     if (isIcham) {
       const res = NextResponse.json({ ok: true, role: 'icham' });

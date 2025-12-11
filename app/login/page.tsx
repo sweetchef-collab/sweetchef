@@ -38,7 +38,8 @@ export default function Page() {
       } else {
         setOk(true);
         setStatus('Connecté');
-        window.location.href = nextPath || '/';
+        const to = data?.role === 'icham' ? '/icham' : (nextPath || '/');
+        window.location.href = to;
       }
     } catch (err: any) {
       setOk(false);
