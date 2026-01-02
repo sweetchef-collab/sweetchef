@@ -43,7 +43,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
               <LineChart data={sortedData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
-                <YAxis tickFormatter={(v) => v >= 1000 ? `${v/1000}k` : v} />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
                 <Tooltip formatter={(value: number) => fmt(value)} />
                 <Legend />
                 <Line type="monotone" dataKey="revenue" name="CA" stroke="#2563eb" strokeWidth={2} dot={false} />
@@ -61,7 +61,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
               <LineChart data={sortedData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
-                <YAxis tickFormatter={(v) => v >= 1000 ? `${v/1000}k` : v} />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
                 <Tooltip formatter={(value: number) => fmt(value)} />
                 <Legend />
                 <Line type="monotone" dataKey="cash" name="Trésorerie" stroke="#0891b2" strokeWidth={2} dot={false} />
@@ -79,7 +79,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
               <LineChart data={sortedData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
-                <YAxis tickFormatter={(v) => v >= 1000 ? `${v/1000}k` : v} />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
                 <Tooltip formatter={(value: number) => fmt(value)} />
                 <Legend />
                 <Line type="monotone" dataKey="receivables" name="Clients (Créances)" stroke="#9333ea" strokeWidth={2} dot={false} />
@@ -97,7 +97,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
               <LineChart data={sortedData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
-                <YAxis tickFormatter={(v) => v >= 1000 ? `${v/1000}k` : v} />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
                 <Tooltip formatter={(value: number) => fmt(value)} />
                 <Legend />
                 <Line type="monotone" dataKey="stock" name="Stocks" stroke="#ca8a04" strokeWidth={2} dot={false} />
