@@ -70,6 +70,9 @@ export default async function Page() {
         <Link href="/" className="brand" aria-label="Sweet Chef Dashboard">
           <Image className="brand-logo" src="/images/Logo.png" alt="Sweet Chef" width={64} height={64} />
         </Link>
+        <div style={{ display:'flex', gap: 8 }}>
+          <a className="btn secondary" href="/api/logout">Déconnexion</a>
+        </div>
       </div>
       <div className="panel">
         <h1 className="title">Infos — Icham</h1>

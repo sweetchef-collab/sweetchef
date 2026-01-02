@@ -12,10 +12,32 @@ export async function POST(request: Request) {
     const uname = String(username).trim().toLowerCase();
     const pwd = String(password).trim().toLowerCase();
     const isIcham = uname === 'icham' && pwd === 'icham2025';
+    const isDataEntry = (uname === 'saisie' && pwd === 'saisie2025') || (uname === 'info@switchf.com' && pwd === 'switchf2025');
+    const isIbrahim = uname === 'ibrahim' && pwd === 'ibrahim2026';
+    const isAdmin = uname === 'admin' && pwd === 'admin123';
 
     if (isIcham) {
       const res = NextResponse.json({ ok: true, role: 'icham' });
       res.cookies.set('sc_role', 'icham', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
+      return res;
+    }
+
+    if (isIbrahim) {
+        const res = NextResponse.json({ ok: true, role: 'ibrahim' });
+        res.cookies.set('sc_role', 'ibrahim', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
+        return res;
+    }
+
+    if (isDataEntry) {
+      const res = NextResponse.json({ ok: true, role: 'data_entry' });
+      res.cookies.set('sc_role', 'data_entry', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
+      return res;
+    }
+
+    if (isAdmin) {
+      const res = NextResponse.json({ ok: true, role: 'admin' });
+      res.cookies.set('sc_role', 'admin', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
+      res.cookies.set('sc_admin', '1', { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
       return res;
     }
 

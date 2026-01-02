@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import { cookies } from 'next/headers';
+import FinancialCharts from '../_components/FinancialCharts';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,11 @@ export default async function Page() {
       <div className="container"><div className="panel"><div className="alert">Non autorisé</div></div></div>
     );
   }
+
+  const { data: metricsData } = await supabase
+    .from('daily_metrics')
+    .select('*')
+    .order('date', { ascending: true });
 
   let data: any[] = [];
   for (let offset = 0; offset < 1000000; offset += 1000) {
@@ -72,6 +78,10 @@ export default async function Page() {
   const months = Array.from(byMonth.entries()).map(([mois, v]) => ({ mois, ...v }))
     .sort((a, b) => a.mois.localeCompare(b.mois));
   const topClients = Array.from(byClient.values()).sort((a, b) => b.total_ht - a.total_ht).slice(0, 20);
+  const last = months.length ? months[months.length - 1] : null;
+  const prev = months.length > 1 ? months[months.length - 2] : null;
+  const deltaHT = last ? Math.round(last.total_ht - (prev?.total_ht || 0)) : 0;
+  const deltaPct = last && prev && prev.total_ht ? Math.round((last.total_ht - prev.total_ht) / prev.total_ht * 100) : null;
 
   return (
     <div className="container">
@@ -79,14 +89,13 @@ export default async function Page() {
         <Link href="/" className="brand" aria-label="Sweet Chef Dashboard">
           <Image className="brand-logo" src="/images/Logo.png" alt="Sweet Chef" width={64} height={64} />
         </Link>
+        <div style={{ display:'flex', gap: 8 }}>
+          <a className="btn secondary" href="/api/logout">Déconnexion</a>
+        </div>
       </div>
       <div className="panel">
-        <h1 className="title">Espace — Icham</h1>
-        <p className="subtitle">Vue dédiée aux ventes d'Icham, avec accès aux pages pôle.</p>
-        <div className="tiles" style={{ marginBottom: 12 }}>
-          <Link className="tile" href="/icham/graphique"><div className="tile-icon">📉</div><div className="tile-title">Graphique — Icham</div><div className="tile-desc">Courbe HT (12 mois)</div></Link>
-          <Link className="tile" href="/icham/infos"><div className="tile-icon">🗂️</div><div className="tile-title">Infos — Icham</div><div className="tile-desc">Liste clients et derniers achats</div></Link>
-        </div>
+        <h1 className="title">Dashboard — Icham</h1>
+        <p className="subtitle">Vue synthétique et accès rapide aux pages dédiées.</p>
         <div className="kpi-cards">
           <div className="kpi-card"><div className="kpi-label">Ventes</div><div className="kpi-value">{ventes}</div></div>
           <div className="kpi-card"><div className="kpi-label">Total HT</div><div className="kpi-value">{totalHT.toLocaleString('fr-FR')}</div></div>
@@ -95,32 +104,34 @@ export default async function Page() {
 
         <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div className="section">
-            <div className="subtitle">Par mois</div>
-            <table className="table">
-              <thead><tr><th>Mois</th><th>Ventes</th><th style={{ textAlign:'right' }}>Total HT</th><th style={{ textAlign:'right' }}>Total TTC</th></tr></thead>
-              <tbody>
-                {months.map((m, i) => (
-                  <tr key={i}><td>{m.mois}</td><td>{m.ventes}</td><td style={{ textAlign:'right' }}>{m.total_ht.toLocaleString('fr-FR')}</td><td style={{ textAlign:'right' }}>{m.total_ttc.toLocaleString('fr-FR')}</td></tr>
-                ))}
-                {!months.length && (<tr><td colSpan={4}><div className="alert">Aucune donnée.</div></td></tr>)}
-              </tbody>
-            </table>
+            <div className="subtitle">Indicateurs du mois</div>
+            <div className="kpi-cards">
+              <div className="kpi-card"><div className="kpi-label">Mois</div><div className="kpi-value">{last?.mois ?? '—'}</div></div>
+              <div className="kpi-card"><div className="kpi-label">Ventes</div><div className="kpi-value">{last?.ventes ?? 0}</div></div>
+              <div className="kpi-card"><div className="kpi-label">HT</div><div className="kpi-value">{(last?.total_ht ?? 0).toLocaleString('fr-FR')}</div></div>
+              <div className="kpi-card"><div className="kpi-label">TTC</div><div className="kpi-value">{(last?.total_ttc ?? 0).toLocaleString('fr-FR')}</div></div>
+            </div>
           </div>
           <div className="section">
-            <div className="subtitle">Top clients (HT)</div>
-            <table className="table">
-              <thead><tr><th>Client</th><th>Ventes</th><th style={{ textAlign:'right' }}>Total HT</th></tr></thead>
-              <tbody>
-                {topClients.map((c, i) => (
-                  <tr key={i}><td><Link className="cell-link" href={`/client/${encodeURIComponent(c.id)}`}>{c.client}</Link></td><td>{c.ventes}</td><td style={{ textAlign:'right' }}>{c.total_ht.toLocaleString('fr-FR')}</td></tr>
-                ))}
-                {!topClients.length && (<tr><td colSpan={3}><div className="alert">Aucune donnée.</div></td></tr>)}
-              </tbody>
-            </table>
+            <div className="subtitle">Variation vs mois précédent</div>
+            <div className="kpi-cards">
+              <div className="kpi-card"><div className="kpi-label">HT Δ</div><div className="kpi-value">{deltaHT.toLocaleString('fr-FR')}</div></div>
+              <div className="kpi-card"><div className="kpi-label">HT Δ %</div><div className="kpi-value">{deltaPct != null ? `${deltaPct}%` : '—'}</div></div>
+              <div className="kpi-card"><div className="kpi-label">Mois précédent</div><div className="kpi-value">{prev?.mois ?? '—'}</div></div>
+            </div>
           </div>
         </div>
 
-        <div className="section" style={{ marginTop: 16 }}>
+        <div className="section" style={{ marginTop: 8 }}>
+          <div className="subtitle">Accès pages</div>
+          <div className="tiles">
+            <Link className="tile" href="/icham/graphique"><div className="tile-icon">📉</div><div className="tile-title">Graphique</div><div className="tile-desc">Courbe HT (12 mois)</div></Link>
+            <Link className="tile" href="/icham/clients"><div className="tile-icon">👥</div><div className="tile-title">Tous les clients</div><div className="tile-desc">Liste complète (client_vendeur)</div></Link>
+            <Link className="tile" href="/icham/infos"><div className="tile-icon">🗂️</div><div className="tile-title">Infos achats</div><div className="tile-desc">Derniers achats et totaux</div></Link>
+          </div>
+        </div>
+
+        <div className="section" style={{ marginTop: 8 }}>
           <div className="subtitle">Accès pôle</div>
           <div className="tiles">
             <Link className="tile" href="/pole/ICHAM"><div className="tile-icon">🟧</div><div className="tile-title">Pôle — Icham</div></Link>
@@ -129,6 +140,8 @@ export default async function Page() {
             <Link className="tile" href="/pole/AUTRE"><div className="tile-icon">🟪</div><div className="tile-title">Pôle — Autre</div></Link>
           </div>
         </div>
+
+        <FinancialCharts data={metricsData || []} />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 const PUBLIC_PATHS = [
   '/login',
   '/api/login',
+  '/api/logout',
 ];
 
 export function middleware(req: NextRequest) {
@@ -22,6 +23,16 @@ export function middleware(req: NextRequest) {
     if (roleCookie?.value === 'icham') {
       const url = req.nextUrl.clone();
       url.pathname = '/icham';
+      return NextResponse.redirect(url);
+    }
+    if (roleCookie?.value === 'ibrahim') {
+        const url = req.nextUrl.clone();
+        url.pathname = '/ibrahim';
+        return NextResponse.redirect(url);
+    }
+    if (roleCookie?.value === 'data_entry') {
+      const url = req.nextUrl.clone();
+      url.pathname = '/data-entry';
       return NextResponse.redirect(url);
     }
   }
