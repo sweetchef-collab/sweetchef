@@ -133,6 +133,9 @@ function DataEntryContent() {
           <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text)' }}>Espace Saisie</div>
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
+            <button onClick={() => router.push('/data-entry/ebe')} className="btn secondary">
+                Saisie EBE (Mensuel)
+            </button>
             <button onClick={() => router.push('/data-entry/history')} className="btn secondary">
                 Voir l'historique
             </button>

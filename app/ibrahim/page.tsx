@@ -82,6 +82,27 @@ export default function IbrahimDashboard() {
                 </div>
             </Link>
 
+            {/* Card Button 4: EBE */}
+            <Link href="/ibrahim/ebe" style={{ textDecoration: 'none' }}>
+                <div className="card" style={{ 
+                    cursor: 'pointer', 
+                    padding: '2rem', 
+                    textAlign: 'center', 
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '1rem'
+                }}
+                >
+                    <div style={{ fontSize: '3rem' }}>💰</div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>Suivi EBE / IPE</h2>
+                    <p style={{ color: 'var(--text-light)' }}>Suivi mensuel de l'Excédent Brut d'Exploitation.</p>
+                </div>
+            </Link>
+
         </div>
       </div>
     </div>
