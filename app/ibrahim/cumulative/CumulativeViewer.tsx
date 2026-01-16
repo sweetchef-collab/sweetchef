@@ -71,6 +71,33 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
     });
   }, [sorted, from, to]);
 
+  const totals = useMemo(() => {
+    let revenue = 0;
+    let margin = 0;
+    let receivablesTotal = 0;
+    let payablesTotal = 0;
+    let cashTotal = 0;
+    let stock = 0;
+    let debts = 0;
+
+    for (const r of filtered) {
+      revenue += r.revenue || 0;
+      margin += r.margin || 0;
+      const { receivablesTotal: rec, payablesTotal: pay, cashTotal: cash } = calcBe(r);
+      receivablesTotal += rec;
+      payablesTotal += pay;
+      cashTotal += cash;
+      stock += r.stock || 0;
+      debts += r.financial_debts || 0;
+    }
+
+    const assets = receivablesTotal + cashTotal + stock;
+    const liabilities = payablesTotal + debts;
+    const be = assets - liabilities;
+
+    return { revenue, margin, receivablesTotal, payablesTotal, cashTotal, stock, debts, assets, liabilities, be };
+  }, [filtered]);
+
   const fmt = (val: number) =>
     val?.toLocaleString('fr-FR', {
       style: 'currency',
@@ -88,7 +115,7 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
         className="card"
         style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}
       >
-        <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Filtre par période</div>
+        <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Période cumulative</div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Du</span>
@@ -129,74 +156,51 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
         </div>
       </div>
 
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>Données jour par jour</div>
-            <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-              Période du {new Date(from).toLocaleDateString('fr-FR')} au{' '}
-              {new Date(to).toLocaleDateString('fr-FR')}
-            </div>
-          </div>
-          <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-            Jours affichés : {filtered.length}
+      <div className="grid">
+        <div className="card">
+          <div className="card-title">CA cumulé</div>
+          <div className="card-value">{fmt(totals.revenue)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Marge cumulée</div>
+          <div className="card-value" style={{ color: '#16a34a' }}>
+            {fmt(totals.margin)}
           </div>
         </div>
-      </div>
-
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f1f5f9' }}>
-              <th style={{ padding: '10px', textAlign: 'left', fontWeight: 'bold' }}>Date</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>CA</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Marge</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Clients (total)</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Trésorerie totale</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Stocks</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Fournisseurs (total)</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Dettes financières</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>BE</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((row) => {
-              const { be, receivablesTotal, payablesTotal, cashTotal } = calcBe(row);
-              const positive = be >= 0;
-              return (
-                <tr key={row.date} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '10px', whiteSpace: 'nowrap' }}>
-                    {new Date(row.date).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(row.revenue || 0)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(row.margin || 0)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(receivablesTotal)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(cashTotal)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(row.stock || 0)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(payablesTotal)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(row.financial_debts || 0)}</td>
-                  <td
-                    style={{
-                      padding: '10px',
-                      textAlign: 'right',
-                      fontWeight: 700,
-                      color: positive ? '#16a34a' : '#dc2626',
-                    }}
-                  >
-                    {fmt(be)}
-                  </td>
-                </tr>
-              );
-            })}
-            {!filtered.length && (
-              <tr>
-                <td colSpan={9} style={{ padding: '12px' }}>
-                  <div className="alert">Aucune donnée pour cette période.</div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <div className="card">
+          <div className="card-title">Créances Clients cumulées</div>
+          <div className="card-value">{fmt(totals.receivablesTotal)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Dettes Fournisseurs cumulées</div>
+          <div className="card-value">{fmt(totals.payablesTotal)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Trésorerie cumulée</div>
+          <div className="card-value" style={{ color: '#2563eb' }}>
+            {fmt(totals.cashTotal)}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-title">Stocks cumulés</div>
+          <div className="card-value">{fmt(totals.stock)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Dettes financières cumulées</div>
+          <div className="card-value">{fmt(totals.debts)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">EBE cumulé (position nette)</div>
+          <div
+            className="card-value"
+            style={{
+              color: totals.be >= 0 ? '#16a34a' : '#dc2626',
+              fontWeight: 600,
+            }}
+          >
+            {fmt(totals.be)}
+          </div>
+        </div>
       </div>
     </div>
   );

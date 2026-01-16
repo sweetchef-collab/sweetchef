@@ -24,16 +24,16 @@ export default async function BePage() {
             <Link href="/ibrahim" style={{ textDecoration: 'none', color: 'inherit' }}>
               Espace Direction
             </Link>
-            {' > '} BE
+            {' > '} EBE
           </div>
         </div>
         <Link href="/ibrahim" className="btn secondary">Retour Dashboard</Link>
       </div>
 
       <div className="panel" style={{ minHeight: '60vh' }}>
-        <h1 className="title">BE journalier (position nette)</h1>
+        <h1 className="title">EBE journalier (position nette)</h1>
         <p className="subtitle">
-          Vue dédiée au BE, avec la formule détaillée et un tableau jour par jour.
+          Vue dédiée à l&apos;EBE, avec la formule détaillée et un tableau jour par jour.
         </p>
 
         <EbeViewer data={metrics || []} />

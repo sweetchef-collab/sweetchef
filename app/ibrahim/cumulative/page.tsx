@@ -29,7 +29,7 @@ export default async function IbrahimCumulativePage() {
       <div className="panel">
         <h1 className="title">Données sur une période</h1>
         <p className="subtitle">
-          Sélectionnez une période ou un mois complet pour voir toutes les données jour par jour (CA, marge, clients, trésorerie, stocks, fournisseurs, dettes financières et BE).
+          Sélectionnez une période ou un mois complet pour voir les cumuls (CA, marge, clients, trésorerie, stocks, fournisseurs, dettes financières et EBE).
         </p>
 
         <CumulativeViewer data={metrics || []} />

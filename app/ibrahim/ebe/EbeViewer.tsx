@@ -51,7 +51,7 @@ export default function EbeViewer({ data }: { data: MetricData[] }) {
     });
 
   if (!recent.length) {
-    return <div className="alert" style={{ marginTop: '32px' }}>Aucune donnée disponible pour le BE.</div>;
+    return <div className="alert" style={{ marginTop: '32px' }}>Aucune donnée disponible pour l&apos;EBE.</div>;
   }
 
   return (
@@ -60,9 +60,9 @@ export default function EbeViewer({ data }: { data: MetricData[] }) {
         className="card"
         style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}
       >
-        <div style={{ fontWeight: 700, marginBottom: '8px' }}>Formule du BE (position nette)</div>
+        <div style={{ fontWeight: 700, marginBottom: '8px' }}>Formule de l&apos;EBE (position nette)</div>
         <p style={{ margin: '4px 0' }}>
-          BE = Actifs d&apos;exploitation − Passifs d&apos;exploitation
+          EBE = Actifs d&apos;exploitation − Passifs d&apos;exploitation
         </p>
         <p style={{ margin: '4px 0' }}>
           Actifs = Clients échus + Clients en cours + Trésorerie LCL + Trésorerie Coop + Trésorerie BPMED + Stocks
@@ -87,7 +87,7 @@ export default function EbeViewer({ data }: { data: MetricData[] }) {
               <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Fournisseurs (total)</th>
               <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Dettes financières</th>
               <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Passifs</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>BE</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>EBE</th>
             </tr>
           </thead>
           <tbody>

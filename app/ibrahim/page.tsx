@@ -114,8 +114,8 @@ export default function IbrahimDashboard() {
                 }}
                 >
                     <div style={{ fontSize: '3rem' }}>💰</div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>BE (Position nette)</h2>
-                    <p style={{ color: 'var(--text-light)' }}>Comprendre le calcul du BE et consulter le détail jour par jour.</p>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>EBE (Position nette)</h2>
+                    <p style={{ color: 'var(--text-light)' }}>Comprendre le calcul de l&apos;EBE et consulter le détail jour par jour.</p>
                 </div>
             </Link>
 
