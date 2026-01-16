@@ -20,10 +20,10 @@ type MetricData = {
   cash: number;
   stock: number;
   financial_debts: number;
+  be?: number;
 };
 
 export default function FinancialCharts({ data }: { data: MetricData[] }) {
-  // Sort data by date just in case
   const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Helper for formatting currency
@@ -53,9 +53,9 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
           </div>
         </div>
 
-        {/* Cash & Debts */}
+        {/* Cash, Dettes & BE */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Trésorerie & Dettes Financières</h3>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Trésorerie, Dettes Financières & BE</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={sortedData}>
@@ -66,6 +66,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
                 <Legend />
                 <Line type="monotone" dataKey="cash" name="Trésorerie" stroke="#0891b2" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="financial_debts" name="Dettes Fin." stroke="#dc2626" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="be" name="BE (position nette)" stroke="#16a34a" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

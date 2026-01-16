@@ -21,9 +21,13 @@ function DataEntryContent() {
   const [formData, setFormData] = useState({
     revenue: '',
     margin: '',
-    receivables: '',
-    payables: '',
-    cash: '',
+    receivables_due: '',
+    receivables_current: '',
+    payables_due: '',
+    payables_current: '',
+    cash_lcl: '',
+    cash_coop: '',
+    cash_bpmed: '',
     stock: '',
     financial_debts: '',
   });
@@ -46,9 +50,13 @@ function DataEntryContent() {
         setFormData({
             revenue: data.revenue || '',
             margin: data.margin || '',
-            receivables: data.receivables || '',
-            payables: data.payables || '',
-            cash: data.cash || '',
+            receivables_due: data.receivables_due || '',
+            receivables_current: data.receivables_current || '',
+            payables_due: data.payables_due || '',
+            payables_current: data.payables_current || '',
+            cash_lcl: data.cash_lcl || '',
+            cash_coop: data.cash_coop || '',
+            cash_bpmed: data.cash_bpmed || '',
             stock: data.stock || '',
             financial_debts: data.financial_debts || '',
         });
@@ -68,13 +76,32 @@ function DataEntryContent() {
     setMessage(null);
 
     try {
+      const receivables_due = parseFloat(formData.receivables_due) || 0;
+      const receivables_current = parseFloat(formData.receivables_current) || 0;
+      const payables_due = parseFloat(formData.payables_due) || 0;
+      const payables_current = parseFloat(formData.payables_current) || 0;
+      const cash_lcl = parseFloat(formData.cash_lcl) || 0;
+      const cash_coop = parseFloat(formData.cash_coop) || 0;
+      const cash_bpmed = parseFloat(formData.cash_bpmed) || 0;
+
+      const totalReceivables = receivables_due + receivables_current;
+      const totalPayables = payables_due + payables_current;
+      const totalCash = cash_lcl + cash_coop + cash_bpmed;
+
       const dataToSubmit = {
         date,
         revenue: parseFloat(formData.revenue) || 0,
         margin: parseFloat(formData.margin) || 0,
-        receivables: parseFloat(formData.receivables) || 0,
-        payables: parseFloat(formData.payables) || 0,
-        cash: parseFloat(formData.cash) || 0,
+        receivables: totalReceivables,
+        payables: totalPayables,
+        cash: totalCash,
+        receivables_due,
+        receivables_current,
+        payables_due,
+        payables_current,
+        cash_lcl,
+        cash_coop,
+        cash_bpmed,
         stock: parseFloat(formData.stock) || 0,
         financial_debts: parseFloat(formData.financial_debts) || 0,
       };
@@ -133,9 +160,6 @@ function DataEntryContent() {
           <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text)' }}>Espace Saisie</div>
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
-            <button onClick={() => router.push('/data-entry/ebe')} className="btn secondary">
-                Saisie EBE (Mensuel)
-            </button>
             <button onClick={() => router.push('/data-entry/history')} className="btn secondary">
                 Voir l'historique
             </button>
@@ -146,7 +170,7 @@ function DataEntryContent() {
       <div className="panel" style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h1 className="title">Saisie Journalière</h1>
         <p className="subtitle" style={{ marginBottom: '32px' }}>
-          Remplissez les indicateurs financiers pour la date sélectionnée.
+          Remplissez les indicateurs financiers de la journée (montants journaliers, pas cumulés).
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -165,11 +189,15 @@ function DataEntryContent() {
           {/* Metrics Grid */}
           <div className="grid">
             {[
-              { label: "Chiffre d'affaires", name: 'revenue', placeholder: '0.00' },
-              { label: "Marge", name: 'margin', placeholder: '0.00' },
-              { label: "Balance clients (Créances)", name: 'receivables', placeholder: '0.00' },
-              { label: "Balance fournisseurs (Dettes)", name: 'payables', placeholder: '0.00' },
-              { label: "Trésorerie disponible", name: 'cash', placeholder: '0.00' },
+              { label: "Chiffre d'affaires (de la journée)", name: 'revenue', placeholder: '0.00' },
+              { label: "Marge (de la journée)", name: 'margin', placeholder: '0.00' },
+              { label: "Balance clients échus", name: 'receivables_due', placeholder: '0.00' },
+              { label: "Balance clients en cours", name: 'receivables_current', placeholder: '0.00' },
+              { label: "Balance fournisseurs échus", name: 'payables_due', placeholder: '0.00' },
+              { label: "Balance fournisseurs en cours", name: 'payables_current', placeholder: '0.00' },
+              { label: "Trésorerie LCL", name: 'cash_lcl', placeholder: '0.00' },
+              { label: "Trésorerie Coop", name: 'cash_coop', placeholder: '0.00' },
+              { label: "Trésorerie BPMED", name: 'cash_bpmed', placeholder: '0.00' },
               { label: "Stocks", name: 'stock', placeholder: '0.00' },
               { label: "Dettes financières", name: 'financial_debts', placeholder: '0.00' },
             ].map((field) => (

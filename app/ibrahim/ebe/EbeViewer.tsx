@@ -1,72 +1,127 @@
 'use client';
 
-import { useState } from 'react';
-
-type EbeData = {
-  month: string;
-  turnover: number;
-  purchases: number;
-  external_charges: number;
-  salaries: number;
-  production_taxes: number;
-  ebe: number; // or calculated
-  margin_percent: number; // or calculated
+type MetricData = {
+  date: string;
+  receivables: number;
+  receivables_due?: number;
+  receivables_current?: number;
+  payables: number;
+  payables_due?: number;
+  payables_current?: number;
+  cash: number;
+  cash_lcl?: number;
+  cash_coop?: number;
+  cash_bpmed?: number;
+  stock: number;
+  financial_debts: number;
 };
 
-export default function EbeViewer({ data }: { data: EbeData[] }) {
-  const sortedData = [...data].sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+function calcBe(row: MetricData) {
+  const receivablesDue = row.receivables_due ?? 0;
+  const receivablesCurrent = row.receivables_current ?? 0;
+  const payablesDue = row.payables_due ?? 0;
+  const payablesCurrent = row.payables_current ?? 0;
+  const cashLcl = row.cash_lcl ?? 0;
+  const cashCoop = row.cash_coop ?? 0;
+  const cashBpmed = row.cash_bpmed ?? 0;
+  const receivablesTotal = receivablesDue + receivablesCurrent || row.receivables || 0;
+  const payablesTotal = payablesDue + payablesCurrent || row.payables || 0;
+  const cashTotal = cashLcl + cashCoop + cashBpmed || row.cash || 0;
+  const assets = receivablesTotal + cashTotal + row.stock;
+  const liabilities = payablesTotal + row.financial_debts;
+  return {
+    assets,
+    liabilities,
+    be: assets - liabilities,
+    receivablesTotal,
+    payablesTotal,
+    cashTotal,
+  };
+}
 
-  const fmt = (val: number) => val?.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+export default function EbeViewer({ data }: { data: MetricData[] }) {
+  const sorted = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const recent = sorted.slice(0, 60);
 
-  if (!sortedData.length) {
-    return <div className="alert" style={{ marginTop: '32px' }}>Aucune donnée EBE disponible pour le moment.</div>;
+  const fmt = (val: number) =>
+    val?.toLocaleString('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    });
+
+  if (!recent.length) {
+    return <div className="alert" style={{ marginTop: '32px' }}>Aucune donnée disponible pour le BE.</div>;
   }
 
   return (
-    <div style={{ marginTop: '32px', overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f1f5f9' }}>
-            <th style={{ padding: '12px', textAlign: 'left', fontWeight: 'bold' }}>Mois</th>
-            <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Chiffre d'affaires</th>
-            <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#64748b' }}>Achats</th>
-            <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#64748b' }}>Ch. Externes</th>
-            <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#64748b' }}>Salaires</th>
-            <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#64748b' }}>Impôts</th>
-            <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#e2e8f0' }}>EBE</th>
-            <th style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>% Marge</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedData.map((row) => {
-            // Recalculate if not present (safeguard)
-            const charges = (row.purchases || 0) + (row.external_charges || 0) + (row.salaries || 0) + (row.production_taxes || 0);
-            const ebe = row.ebe !== undefined ? row.ebe : (row.turnover - charges);
-            const margin = row.margin_percent !== undefined ? row.margin_percent : (row.turnover ? (ebe / row.turnover) * 100 : 0);
-            
-            let color = '#eab308'; // yellow
-            if (margin >= 5 && margin <= 15) color = '#16a34a'; // green
-            else if (margin < 5) color = '#dc2626'; // red
-            
-            return (
-              <tr key={row.month} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
-                    {new Date(row.month).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
-                </td>
-                <td style={{ padding: '12px', textAlign: 'right' }}>{fmt(row.turnover)}</td>
-                <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>{fmt(row.purchases)}</td>
-                <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>{fmt(row.external_charges)}</td>
-                <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>{fmt(row.salaries)}</td>
-                <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>{fmt(row.production_taxes)}</td>
-                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#f8fafc' }}>{fmt(ebe)}</td>
-                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: color }}>
-                    {margin.toFixed(2)}%
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div style={{ marginTop: '32px', display: 'grid', gap: '24px' }}>
+      <div
+        className="card"
+        style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: '8px' }}>Formule du BE (position nette)</div>
+        <p style={{ margin: '4px 0' }}>
+          BE = Actifs d&apos;exploitation − Passifs d&apos;exploitation
+        </p>
+        <p style={{ margin: '4px 0' }}>
+          Actifs = Clients échus + Clients en cours + Trésorerie LCL + Trésorerie Coop + Trésorerie BPMED + Stocks
+        </p>
+        <p style={{ margin: '4px 0' }}>
+          Passifs = Fournisseurs échus + Fournisseurs en cours + Dettes financières
+        </p>
+        <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#64748b' }}>
+          Toutes les valeurs sont des montants de fin de journée tirés de la saisie journalière.
+        </p>
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f1f5f9' }}>
+              <th style={{ padding: '10px', textAlign: 'left', fontWeight: 'bold' }}>Date</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Clients (total)</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Trésorerie totale</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Stocks</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Actifs</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Fournisseurs (total)</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Dettes financières</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>Passifs</th>
+              <th style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>BE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recent.map((row) => {
+              const { assets, liabilities, be, receivablesTotal, payablesTotal, cashTotal } = calcBe(row);
+              const positive = be >= 0;
+              return (
+                <tr key={row.date} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: '10px', whiteSpace: 'nowrap' }}>
+                    {new Date(row.date).toLocaleDateString('fr-FR')}
+                  </td>
+                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(receivablesTotal)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(cashTotal)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(row.stock || 0)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600 }}>{fmt(assets)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(payablesTotal)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right' }}>{fmt(row.financial_debts || 0)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600 }}>{fmt(liabilities)}</td>
+                  <td
+                    style={{
+                      padding: '10px',
+                      textAlign: 'right',
+                      fontWeight: 700,
+                      color: positive ? '#16a34a' : '#dc2626',
+                    }}
+                  >
+                    {fmt(be)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

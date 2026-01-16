@@ -7,8 +7,15 @@ type MetricData = {
   revenue: number;
   margin: number;
   receivables: number;
+  receivables_due?: number;
+  receivables_current?: number;
   payables: number;
+  payables_due?: number;
+  payables_current?: number;
   cash: number;
+  cash_lcl?: number;
+  cash_coop?: number;
+  cash_bpmed?: number;
   stock: number;
   financial_debts: number;
 };
@@ -96,11 +103,65 @@ export default function ComparisonViewer({ data }: { data: MetricData[] }) {
             <div style={{ padding: '12px', fontSize: '0.9rem', color: '#64748b' }}>{new Date(dateA).toLocaleDateString('fr-FR')}</div>
             <div style={{ padding: '12px', fontSize: '0.9rem', color: '#64748b' }}>Différence</div>
 
-            {renderRow("Chiffre d'affaires", dataA.revenue, dataB.revenue)}
-            {renderRow("Marge", dataA.margin, dataB.margin)}
-            {renderRow("Trésorerie", dataA.cash, dataB.cash)}
-            {renderRow("Créances Clients", dataA.receivables, dataB.receivables)}
-            {renderRow("Dettes Fournisseurs", dataA.payables, dataB.payables, true)}
+            {renderRow("Chiffre d'affaires (journée)", dataA.revenue, dataB.revenue)}
+            {renderRow("Marge (journée)", dataA.margin, dataB.margin)}
+
+            {renderRow(
+              "Créances Clients échues",
+              dataA.receivables_due ?? 0,
+              dataB.receivables_due ?? 0
+            )}
+            {renderRow(
+              "Créances Clients en cours",
+              dataA.receivables_current ?? 0,
+              dataB.receivables_current ?? 0
+            )}
+            {renderRow(
+              "Créances Clients (total)",
+              (dataA.receivables_due ?? 0) + (dataA.receivables_current ?? 0) || dataA.receivables,
+              (dataB.receivables_due ?? 0) + (dataB.receivables_current ?? 0) || dataB.receivables
+            )}
+
+            {renderRow(
+              "Dettes Fournisseurs échues",
+              dataA.payables_due ?? 0,
+              dataB.payables_due ?? 0,
+              true
+            )}
+            {renderRow(
+              "Dettes Fournisseurs en cours",
+              dataA.payables_current ?? 0,
+              dataB.payables_current ?? 0,
+              true
+            )}
+            {renderRow(
+              "Dettes Fournisseurs (total)",
+              (dataA.payables_due ?? 0) + (dataA.payables_current ?? 0) || dataA.payables,
+              (dataB.payables_due ?? 0) + (dataB.payables_current ?? 0) || dataB.payables,
+              true
+            )}
+
+            {renderRow(
+              "Trésorerie LCL",
+              dataA.cash_lcl ?? 0,
+              dataB.cash_lcl ?? 0
+            )}
+            {renderRow(
+              "Trésorerie Coop",
+              dataA.cash_coop ?? 0,
+              dataB.cash_coop ?? 0
+            )}
+            {renderRow(
+              "Trésorerie BPMED",
+              dataA.cash_bpmed ?? 0,
+              dataB.cash_bpmed ?? 0
+            )}
+            {renderRow(
+              "Trésorerie totale",
+              (dataA.cash_lcl ?? 0) + (dataA.cash_coop ?? 0) + (dataA.cash_bpmed ?? 0) || dataA.cash,
+              (dataB.cash_lcl ?? 0) + (dataB.cash_coop ?? 0) + (dataB.cash_bpmed ?? 0) || dataB.cash
+            )}
+
             {renderRow("Stocks", dataA.stock, dataB.stock)}
             {renderRow("Dettes Financières", dataA.financial_debts, dataB.financial_debts, true)}
           </div>

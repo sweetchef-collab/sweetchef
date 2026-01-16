@@ -19,7 +19,6 @@ export default function IbrahimDashboard() {
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', width: '100%', maxWidth: '800px' }}>
             
-            {/* Card Button 1: Data */}
             <Link href="/ibrahim/data" style={{ textDecoration: 'none' }}>
                 <div className="card" style={{ 
                     cursor: 'pointer', 
@@ -40,7 +39,6 @@ export default function IbrahimDashboard() {
                 </div>
             </Link>
 
-            {/* Card Button 2: Graphs */}
             <Link href="/ibrahim/graphs" style={{ textDecoration: 'none' }}>
                 <div className="card" style={{ 
                     cursor: 'pointer', 
@@ -61,7 +59,6 @@ export default function IbrahimDashboard() {
                 </div>
             </Link>
 
-            {/* Card Button 3: Comparison */}
             <Link href="/ibrahim/comparison" style={{ textDecoration: 'none' }}>
                 <div className="card" style={{ 
                     cursor: 'pointer', 
@@ -82,7 +79,26 @@ export default function IbrahimDashboard() {
                 </div>
             </Link>
 
-            {/* Card Button 4: EBE */}
+            <Link href="/ibrahim/cumulative" style={{ textDecoration: 'none' }}>
+                <div className="card" style={{ 
+                    cursor: 'pointer', 
+                    padding: '2rem', 
+                    textAlign: 'center', 
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '1rem'
+                }}
+                >
+                    <div style={{ fontSize: '3rem' }}>🧮</div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>Cumul sur période</h2>
+                    <p style={{ color: 'var(--text-light)' }}>Voir les totaux entre deux dates ou sur un mois complet.</p>
+                </div>
+            </Link>
+
             <Link href="/ibrahim/ebe" style={{ textDecoration: 'none' }}>
                 <div className="card" style={{ 
                     cursor: 'pointer', 
@@ -98,8 +114,8 @@ export default function IbrahimDashboard() {
                 }}
                 >
                     <div style={{ fontSize: '3rem' }}>💰</div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>Suivi EBE / IPE</h2>
-                    <p style={{ color: 'var(--text-light)' }}>Suivi mensuel de l'Excédent Brut d'Exploitation.</p>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>BE (Position nette)</h2>
+                    <p style={{ color: 'var(--text-light)' }}>Comprendre le calcul du BE et consulter le détail jour par jour.</p>
                 </div>
             </Link>
 
