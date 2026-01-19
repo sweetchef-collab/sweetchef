@@ -159,18 +159,6 @@ export default function DataViewer({ data }: { data: MetricData[] }) {
               <div className="card-title">Dettes Financières</div>
               <div className="card-value">{fmt(currentData.financial_debts)}</div>
             </div>
-            <div className="card">
-              <div className="card-title">BE (position nette de la journée)</div>
-              <div
-                className="card-value"
-                style={{ color: bePositive ? '#16a34a' : '#dc2626' }}
-              >
-                {fmt(beCurrent)}
-              </div>
-              <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
-                {bePositive ? 'Position positive' : 'Position négative'}
-              </div>
-            </div>
           </div>
         ) : (
           <div className="alert">Données introuvables pour cette date.</div>

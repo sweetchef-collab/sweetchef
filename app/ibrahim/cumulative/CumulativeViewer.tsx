@@ -73,32 +73,54 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
   }, [sorted, from, to]);
 
   const totals = useMemo(() => {
+    // 1. Accumulate Flow Metrics (Revenue, Margin, Order Count)
     let revenue = 0;
     let order_count = 0;
     let margin = 0;
-    let receivablesTotal = 0;
-    let payablesTotal = 0;
-    let cashTotal = 0;
-    let stock = 0;
-    let debts = 0;
 
     for (const r of filtered) {
       revenue += r.revenue || 0;
       order_count += r.order_count || 0;
       margin += r.margin || 0;
-      const { receivablesTotal: rec, payablesTotal: pay, cashTotal: cash } = calcBe(r);
-      receivablesTotal += rec;
-      payablesTotal += pay;
-      cashTotal += cash;
-      stock += r.stock || 0;
-      debts += r.financial_debts || 0;
     }
 
-    const assets = receivablesTotal + cashTotal + stock;
-    const liabilities = payablesTotal + debts;
-    const be = assets - liabilities;
+    // 2. Snapshot Metrics (Last available data point in the period)
+    // "tout le reste n'est pas cumulatif" -> Use the value from the last day of the selected period.
+    const lastRecord = filtered.length > 0 ? filtered[filtered.length - 1] : null;
 
-    return { revenue, order_count, margin, receivablesTotal, payablesTotal, cashTotal, stock, debts, assets, liabilities, be };
+    const receivablesDue = lastRecord?.receivables_due ?? 0;
+    const receivablesCurrent = lastRecord?.receivables_current ?? 0;
+    const receivablesTotal = receivablesDue + receivablesCurrent || lastRecord?.receivables || 0;
+
+    const payablesDue = lastRecord?.payables_due ?? 0;
+    const payablesCurrent = lastRecord?.payables_current ?? 0;
+    const payablesTotal = payablesDue + payablesCurrent || lastRecord?.payables || 0;
+
+    const cashLcl = lastRecord?.cash_lcl ?? 0;
+    const cashCoop = lastRecord?.cash_coop ?? 0;
+    const cashBpmed = lastRecord?.cash_bpmed ?? 0;
+    const cashTotal = cashLcl + cashCoop + cashBpmed || lastRecord?.cash || 0;
+
+    const stock = lastRecord?.stock || 0;
+    const debts = lastRecord?.financial_debts || 0;
+
+    return { 
+      revenue, 
+      order_count, 
+      margin, 
+      receivablesDue,
+      receivablesCurrent,
+      receivablesTotal, 
+      payablesDue,
+      payablesCurrent,
+      payablesTotal, 
+      cashLcl,
+      cashCoop,
+      cashBpmed,
+      cashTotal, 
+      stock, 
+      debts 
+    };
   }, [filtered]);
 
   const fmt = (val: number) =>
@@ -180,39 +202,60 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
             {fmt(totals.order_count ? totals.revenue / totals.order_count : 0)}
           </div>
         </div>
+
+        {/* Detailed Breakdown for Snapshot Metrics */}
         <div className="card">
-          <div className="card-title">Créances Clients cumulées</div>
+          <div className="card-title">Créances Clients échues</div>
+          <div className="card-value">{fmt(totals.receivablesDue)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Créances Clients en cours</div>
+          <div className="card-value">{fmt(totals.receivablesCurrent)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Créances Clients (total)</div>
           <div className="card-value">{fmt(totals.receivablesTotal)}</div>
         </div>
+
         <div className="card">
-          <div className="card-title">Dettes Fournisseurs cumulées</div>
-          <div className="card-value">{fmt(totals.payablesTotal)}</div>
+          <div className="card-title">Dettes Fournisseurs échues</div>
+          <div className="card-value">{fmt(totals.payablesDue)}</div>
         </div>
         <div className="card">
-          <div className="card-title">Trésorerie cumulée</div>
-          <div className="card-value" style={{ color: '#2563eb' }}>
+          <div className="card-title">Dettes Fournisseurs en cours</div>
+          <div className="card-value">{fmt(totals.payablesCurrent)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Dettes Fournisseurs (total)</div>
+          <div className="card-value">{fmt(totals.payablesTotal)}</div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Trésorerie LCL</div>
+          <div className="card-value" style={{ color: '#2563eb' }}>{fmt(totals.cashLcl)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Trésorerie Coop</div>
+          <div className="card-value" style={{ color: '#2563eb' }}>{fmt(totals.cashCoop)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Trésorerie BPMED</div>
+          <div className="card-value" style={{ color: '#2563eb' }}>{fmt(totals.cashBpmed)}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Trésorerie totale</div>
+          <div className="card-value" style={{ color: '#1d4ed8' }}>
             {fmt(totals.cashTotal)}
           </div>
         </div>
+
         <div className="card">
-          <div className="card-title">Stocks cumulés</div>
+          <div className="card-title">Stocks</div>
           <div className="card-value">{fmt(totals.stock)}</div>
         </div>
         <div className="card">
-          <div className="card-title">Dettes financières cumulées</div>
+          <div className="card-title">Dettes financières</div>
           <div className="card-value">{fmt(totals.debts)}</div>
-        </div>
-        <div className="card">
-          <div className="card-title">EBE cumulé (position nette)</div>
-          <div
-            className="card-value"
-            style={{
-              color: totals.be >= 0 ? '#16a34a' : '#dc2626',
-              fontWeight: 600,
-            }}
-          >
-            {fmt(totals.be)}
-          </div>
         </div>
       </div>
     </div>

@@ -92,9 +92,9 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
           </div>
         </div>
 
-        {/* Cash, Dettes & EBE */}
+        {/* Cash */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Trésorerie, Dettes Financières & EBE</h3>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Trésorerie</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
@@ -104,16 +104,48 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
                 <Tooltip formatter={(value: number) => fmt(value)} />
                 <Legend />
                 <Line type="monotone" dataKey="cash" name="Trésorerie" stroke="#0891b2" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="financial_debts" name="Dettes Fin." stroke="#dc2626" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="be" name="EBE (position nette)" stroke="#16a34a" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Receivables & Payables */}
+        {/* Financial Debts */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Balance Clients & Fournisseurs</h3>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Dettes Financières</h3>
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
+                <Tooltip formatter={(value: number) => fmt(value)} />
+                <Legend />
+                <Line type="monotone" dataKey="financial_debts" name="Dettes Fin." stroke="#dc2626" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* EBE */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>EBE (Position nette)</h3>
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
+                <Tooltip formatter={(value: number) => fmt(value)} />
+                <Legend />
+                <Line type="monotone" dataKey="be" name="EBE" stroke="#16a34a" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Receivables */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Créances Clients</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
@@ -123,6 +155,22 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
                 <Tooltip formatter={(value: number) => fmt(value)} />
                 <Legend />
                 <Line type="monotone" dataKey="receivables" name="Clients (Créances)" stroke="#9333ea" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Payables */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Dettes Fournisseurs</h3>
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
+                <Tooltip formatter={(value: number) => fmt(value)} />
+                <Legend />
                 <Line type="monotone" dataKey="payables" name="Fournisseurs (Dettes)" stroke="#ea580c" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
