@@ -5,6 +5,7 @@ import { useState } from 'react';
 type MetricData = {
   date: string;
   revenue: number;
+  order_count?: number;
   margin: number;
   receivables: number;
   receivables_due?: number;
@@ -105,6 +106,12 @@ export default function ComparisonViewer({ data }: { data: MetricData[] }) {
 
             {renderRow("Chiffre d'affaires (journée)", dataA.revenue, dataB.revenue)}
             {renderRow("Marge (journée)", dataA.margin, dataB.margin)}
+            {renderRow("Nombre de commandes", dataA.order_count || 0, dataB.order_count || 0)}
+            {renderRow(
+              "Panier Moyen", 
+              dataA.order_count ? dataA.revenue / dataA.order_count : 0, 
+              dataB.order_count ? dataB.revenue / dataB.order_count : 0
+            )}
 
             {renderRow(
               "Créances Clients échues",
