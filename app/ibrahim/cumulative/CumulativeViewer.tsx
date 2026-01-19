@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 type MetricData = {
   date: string;
   revenue: number;
+  order_count?: number;
   margin: number;
   receivables: number;
   receivables_due?: number;
@@ -73,6 +74,7 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
 
   const totals = useMemo(() => {
     let revenue = 0;
+    let order_count = 0;
     let margin = 0;
     let receivablesTotal = 0;
     let payablesTotal = 0;
@@ -82,6 +84,7 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
 
     for (const r of filtered) {
       revenue += r.revenue || 0;
+      order_count += r.order_count || 0;
       margin += r.margin || 0;
       const { receivablesTotal: rec, payablesTotal: pay, cashTotal: cash } = calcBe(r);
       receivablesTotal += rec;
@@ -95,7 +98,7 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
     const liabilities = payablesTotal + debts;
     const be = assets - liabilities;
 
-    return { revenue, margin, receivablesTotal, payablesTotal, cashTotal, stock, debts, assets, liabilities, be };
+    return { revenue, order_count, margin, receivablesTotal, payablesTotal, cashTotal, stock, debts, assets, liabilities, be };
   }, [filtered]);
 
   const fmt = (val: number) =>
@@ -165,6 +168,16 @@ export default function CumulativeViewer({ data }: { data: MetricData[] }) {
           <div className="card-title">Marge cumulée</div>
           <div className="card-value" style={{ color: '#16a34a' }}>
             {fmt(totals.margin)}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-title">Nombre de commandes</div>
+          <div className="card-value">{totals.order_count}</div>
+        </div>
+        <div className="card">
+          <div className="card-title">Panier Moyen (Période)</div>
+          <div className="card-value">
+            {fmt(totals.order_count ? totals.revenue / totals.order_count : 0)}
           </div>
         </div>
         <div className="card">

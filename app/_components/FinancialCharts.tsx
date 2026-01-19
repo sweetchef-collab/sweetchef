@@ -14,6 +14,7 @@ import {
 type MetricData = {
   date: string;
   revenue: number;
+  order_count?: number;
   margin: number;
   receivables: number;
   payables: number;
@@ -25,6 +26,10 @@ type MetricData = {
 
 export default function FinancialCharts({ data }: { data: MetricData[] }) {
   const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const chartData = sortedData.map(d => ({
+    ...d,
+    avgBasket: d.order_count ? d.revenue / d.order_count : 0
+  }));
 
   // Helper for formatting currency
   const fmt = (val: number) => val.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -40,7 +45,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
           <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Chiffre d'affaires & Marge</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sortedData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
@@ -53,12 +58,46 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
           </div>
         </div>
 
-        {/* Cash, Dettes & BE */}
+        {/* Order Count */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Trésorerie, Dettes Financières & BE</h3>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Nombre de commandes</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sortedData}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="order_count" name="Commandes" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Average Basket */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Panier Moyen</h3>
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
+                <Tooltip formatter={(value: number) => fmt(value)} />
+                <Legend />
+                <Line type="monotone" dataKey="avgBasket" name="Panier Moyen" stroke="#ec4899" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Cash, Dettes & EBE */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Trésorerie, Dettes Financières & EBE</h3>
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
@@ -66,7 +105,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
                 <Legend />
                 <Line type="monotone" dataKey="cash" name="Trésorerie" stroke="#0891b2" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="financial_debts" name="Dettes Fin." stroke="#dc2626" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="be" name="BE (position nette)" stroke="#16a34a" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="be" name="EBE (position nette)" stroke="#16a34a" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -77,7 +116,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
           <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Balance Clients & Fournisseurs</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sortedData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />
@@ -95,7 +134,7 @@ export default function FinancialCharts({ data }: { data: MetricData[] }) {
           <h3 style={{ marginBottom: '15px', fontWeight: '600' }}>Stocks</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sortedData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis tickFormatter={(v: number) => v >= 1000 ? `${v/1000}k` : v.toString()} />

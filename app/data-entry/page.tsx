@@ -20,6 +20,7 @@ function DataEntryContent() {
 
   const [formData, setFormData] = useState({
     revenue: '',
+    order_count: '',
     margin: '',
     receivables_due: '',
     receivables_current: '',
@@ -49,6 +50,7 @@ function DataEntryContent() {
     if (data) {
         setFormData({
             revenue: data.revenue || '',
+            order_count: data.order_count || '',
             margin: data.margin || '',
             receivables_due: data.receivables_due || '',
             receivables_current: data.receivables_current || '',
@@ -91,6 +93,7 @@ function DataEntryContent() {
       const dataToSubmit = {
         date,
         revenue: parseFloat(formData.revenue) || 0,
+        order_count: parseFloat(formData.order_count) || 0,
         margin: parseFloat(formData.margin) || 0,
         receivables: totalReceivables,
         payables: totalPayables,
@@ -190,6 +193,7 @@ function DataEntryContent() {
           <div className="grid">
             {[
               { label: "Chiffre d'affaires (de la journée)", name: 'revenue', placeholder: '0.00' },
+              { label: "Nombre de commandes", name: 'order_count', placeholder: '0' },
               { label: "Marge (de la journée)", name: 'margin', placeholder: '0.00' },
               { label: "Balance clients échus", name: 'receivables_due', placeholder: '0.00' },
               { label: "Balance clients en cours", name: 'receivables_current', placeholder: '0.00' },

@@ -5,6 +5,7 @@ import { useState } from 'react';
 type MetricData = {
   date: string;
   revenue: number;
+  order_count?: number;
   margin: number;
   receivables: number;
   receivables_due?: number;
@@ -79,6 +80,16 @@ export default function DataViewer({ data }: { data: MetricData[] }) {
             <div className="card">
               <div className="card-title">Marge (journée)</div>
               <div className="card-value" style={{ color: '#16a34a' }}>{fmt(currentData.margin)}</div>
+            </div>
+            <div className="card">
+              <div className="card-title">Nombre de commandes</div>
+              <div className="card-value">{currentData.order_count || 0}</div>
+            </div>
+            <div className="card">
+              <div className="card-title">Panier Moyen</div>
+              <div className="card-value">
+                {fmt(currentData.order_count ? currentData.revenue / currentData.order_count : 0)}
+              </div>
             </div>
 
             <div className="card">
